@@ -1,0 +1,5 @@
+llm_model: ./base_models/Baichuan-13B-Chat
+
+translate_model: seamlessM4T_large
+
+pdf_model: /data/download_model/nougat_model_small

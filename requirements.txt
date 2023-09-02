@@ -1,0 +1,11 @@
+cpm_kernels==1.0.11
+fitz==0.0.1.dev2
+loguru==0.7.0
+nougat_ocr==0.1.2
+PyYAML==6.0.1
+PyYAML==6.0.1
+sentencepiece==0.1.99
+torch==2.0.1
+tqdm==4.66.1
+transformers==4.32.1
+transformers_stream_generator==0.0.4

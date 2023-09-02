@@ -1,0 +1,810 @@
+# TPTU: Task Planning and Tool Usage of
+
+Large Language Model-based AI Agents
+
+ Jingqing Ruan\({}^{\dagger}\)
+
+ruanjingqing@sensetime.com
+
+&Yihong Chen\({}^{\dagger}\)
+
+chenyihong@sensetime.com
+
+&Bin Zhang\({}^{\dagger}\)
+
+zhangbin11@sensetime.com
+
+&Zhiwei Xu\({}^{\dagger}\)
+
+xuzhiwei@sensetime.com
+
+&Tianpeng Bao\({}^{\dagger}\)
+
+baotianpeng@sensetime.com
+
+&Guoqing Du\({}^{\dagger}\)
+
+dguoqing@sensetime.com
+
+&Shiwei Shi\({}^{\dagger}\)
+
+shishiwei@sensetime.com
+
+&Hangyu Mao\({}^{\dagger}\)1
+
+maohangyu@sensetime.com
+
+&Xingyu Zeng
+
+zengxingyu@sensetime.com
+
+&Rui Zhao
+
+zhaorui@sensetime.com
+
+&SenseTime Research, China
+
+These authors contribute equally to this work.These authors work as research interns at SenseTime Research.The corresponding author.
+
+###### Abstract
+
+With recent advancements in natural language processing, Large Language Models (LLMs) have emerged as powerful tools for various real-world applications. Despite their prowess, the intrinsic generative abilities of LLMs may prove insufficient for handling complex tasks which necessitate a combination of task planning and the usage of external tools. In this paper, we first propose a structured framework tailored for LLM-based AI Agents and discuss the crucial capabilities necessary for tackling intricate problems. Within this framework, we design two distinct types of agents (i.e., one-step agent and sequential agent) to execute the inference process. Subsequently, we instantiate the framework using various LLMs and evaluate their Task Planning and Tool Usage (TPTU) abilities on typical tasks. By highlighting key findings and challenges, our goal is to provide a helpful resource for researchers and practitioners to leverage the power of LLMs in their AI applications. Our study emphasizes the substantial potential of these models, while also identifying areas that need more investigation and improvement.
+
+## 1 Introduction
+
+Large Language Model (LLM) [1] is a recent breakthrough in natural language processing (NLP) research. These models are trained on massive amounts of text data and can solve a wide range of tasks, even those that were not included in their training dataset. This ability is especially evident in few-shot [2] and zero-shot [3] learning, where LLMs can perform well with minimal or no task-specific training.
+
+However, the application of LLMs in real-world settings presents unique challenges. On the one hand, LLMs are proved to be poor at solving logic problems such as mathematics, and their training data is also out of date. Teaching LLMs to use tools such as calculators or search engines can help prevent them from hallucinating. On the other hand, despite their impressive problem-solving abilities, the successful integration of these models into complex systems often requires more than just task understanding - it necessitates the capacity to manipulate various tools and interact effectively with users. This is exemplified in systems like AutoGPT 1, BabyAGI 2, and ChatGPT-plugins 3, which leverage LLMs' capabilities beyond merely generating well-written texts and programs. In these systems, LLMs operate as the central controller, manipulating different tools and interacting with humans, thus taking on the role of Artificial Intelligence Agents (AI Agents). In addition to being central planners, LLMs are often used as intermediaries between macro plans and low-level tool calls, or as specific tools. As such, LLMs are seen as a crucial approximation of the linguistic world model in real-world systems.
+
+Footnote 1: https://github.com/Significant-Gravitas/Auto-GPT
+
+Footnote 2: https://github.com/yoheinakajima/babyagi
+
+Footnote 3: https://openai.com/blog/chatgpt-plugins
+
+In this paper, we propose a structured framework and discuss the necessary abilities of such LLM-based AI Agents. Furthermore, we instantiate the framework with different LLMs and evaluate their task planning and tool usage (TPTU) abilities on several tasks. Our main contributions are summarized as follows:
+
+1. We propose a structured framework tailored for LLM-based AI Agents to evaluate the TPTU abilities of the existing open-source LLMs.
+2. We design two distinct types of agents (i.e., one-step agent and sequential agent) to execute the inference process and provide detailed empirical results and analysis.
+3. Our study reveals significant potential in utilizing LLMs for complex tasks while highlighting areas for further investigation and improvement.
+
+## 2 Method
+
+To the best of our knowledge, the study of "Agent", "Autonomous Agent", "AI Agent" and "Multi-Agent" has been a central part of AI research for decades [4; 5; 6; 7; 8; 9], aimed at understanding and building intelligent and autonomous systems, but there is currently no standardized definition for AI Agents, particularly those that are based on LLMs.
+
+**In this paper, the Artificial Intelligence Agent (AI Agent) is defined as a program that employs artificial intelligence techniques to perform tasks that typically require human-like intelligence**. AI Agents can take many forms, from simple chatbots to complex autonomous systems that interact with their environment and make decisions in real time. They can be trained using a variety of machine learning techniques, including supervised, unsupervised, and reinforcement learning, and can be programmed to perform specific tasks or learn from their experiences in order to improve their performance over time.
+
+### Agent Framework
+
+We are particularly interested in the AI Agent that employs the LLM techniques (i.e., LLM-based AI Agent), due to its high efficiency and flexibility in various tasks and domains. Specifically, we design our AI Agent framework with six components as shown in Figure 1:
+
+1. **Task Instruction**. This is the explicit input of the agent. In practical systems, the task instruction comes from human users of the systems. For example, in an HR system, the user may give a task instruction: How much budget is required to provide a 1005 incentive for each colleague who has worked for five years? In contrast, in a criminal investigation system, the user may give a task instruction: Deploy surveillance on a group of suspects.
+2. **Designed Prompt**. This is an additional form of input for the agent, derived from tasks that the human users anticipate the AI Agent will complete. Humans can craft specific instructions or demonstrations to steer the LLM-based AI Agents toward generating suitable 
+
+[MISSING_PAGE_FAIL:3]
+
+API to fetch current weather information, or a Python interpreter to solve the mathematical question.
+4. **LLM**. This is the core component of the system that interprets the task instructions and prompts, interacts with the toolset, and generates the intermediate outputs and final answers. In this context, we utilize publicly available large language models such as ChatGPT, GPT-4, and others.
+5. **Intermediate Output**. This represents the output generated by the LLM-based AI Agent after it processes the task instructions and prompts, and interacts with the toolset. There are three typical intermediate outputs: (1) the high-level plans to fulfill the original user instruction, (2) selected and created tools to fulfill each subtask in the plans, and (3) the results or errors produced after tool execution. The output can be reviewed and refined, either by the AI Agent itself or with human oversight, to ensure it is accurate and meets the requirements of the task instruction.
+6. **Final Answer**. This is the output that the AI Agent summarizes and provides to the user after all processing (including task planning, tool usage, and possibly error feedback) has been completed.
+
+### Agent Ability
+
+To apply LLM-based AI Agents to augment or replace human decision-making in real-world applications, the agents typically require the following abilities:
+
+1. **Perception Ability**: AI Agents must be able to perceive the task instruction from human and system specifications.
+2. **Task Planning Ability**: AI Agents should have the capacity to create a step-by-step plan for complex task composition based on the perceived instruction and specifications. This usually involves the generation of critical subtask sequences, and the ability to adjust the plan dynamically in response to changes in the task or environment.
+3. **Tool Usage Ability**: On the one hand, AI Agents should possess the capacity to **select** a variety of existing tools or resources to execute complex tasks. On the other hand, AI Agents should **create** new tools by converting the task requirements. This ability enables the AI Agent to extend its capabilities beyond LLM itself and the existing tools, by leveraging the vast resources available in the digital world. Finally, AI Agents should have the ability to **execute** the selected or created tools for truly grounding the human request based on the resources and constraints of systems.
+4. **Learning/Reflection/Memory (from Feedback)**: AI Agents should be capable of learning from feedback, including correct results and exception errors. They should incorporate memory, such as logging or chat history, and reflection to adapt their plans or decisions. This allows the agents to continuously improve their performance and efficiency in task execution.
+5. **Summarization**: After several rounds of interaction with humans, tools, and systems, AI agents can ultimately complete the original task provided by the users. At this point, AI agents should be able to summarize the interaction history and provide a final answer that is concise and easy to understand for the users.
+
+To endow AI Agents with the aforementioned abilities, some techniques that can be used include chain-of-thought (CoT) and vector databases, as shown in Table 1.
+
+### Agent Design
+
+Task planning and tool usage represent the cornerstone of LLM's abilities. Others like perception, learning/reflection/memory (from feedback), and summarization are indeed critical, but they primarily serve to enhance and support these two core competencies. Therefore, concentrating on these two key competencies - **T**ask **P**lanning and **T**ool **U**sage (TPTU for short) - we have devised two distinct types of AI agents, as depicted in Figure 2:
+
+* The first one, named as the **O**ne-step **A**gent (TPTU-OA), adopts a global perspective to interpret the original problem, effectively breaking it down into a sequence of sub-tasks in a single instance. This strategy fully harnesses the model's comprehensive understanding capabilities to map out the problem-solving steps for all sub-tasks at once. This method underscores the significance of a holistic understanding and planning of the overall task, albeit it might lack flexibility when dealing with individual sub-tasks.
+* The second type, referred to as the **S**equential **A**gent (TPTU-SA), emphasizes tackling the current sub-task at hand. Upon successful resolution of the ongoing sub-task, this agent requests the LLMs to provide the succeeding sub-task. This approach enables the model to maintain a clear and concentrated focus throughout the problem-solving journey, tackling issues incrementally. Such a methodology allows for continuous feedback and progress within the confines of addressing a broader problem.
+
+These two distinct agent models represent two disparate problem-solving strategies - the sequential and one-step resolution 4. In our subsequent experiments, we aim to understand their respective
+
+\begin{table}
+\begin{tabular}{l l} \hline \hline
+**Ability** & **Possible Techniques** \\ \hline Perception & Multi-input Fusion \\ Task Planning & Zero-shot CoT and Few-shot CoT \\ Tool Usage & Text Matching/Code Generation/Action Grounding \\ (Selection/Creation/Execution) & \\ Learning/Reflection/Memory & RLHF/Multi-agent Debate/Vector Database \\ Summarization & Attention Mechanism and Natural Language Generation \\ \hline \hline \end{tabular}
+\end{table}
+Table 1: A simple illustration of the techniques for endowing the key ability.
+
+Figure 2: The workflows of the One-step Agent and the Sequential Agent are specifically designed to assess the Task Planning and Tool Usage abilities of LLMs.
+
+strengths and weaknesses, and how they can be best utilized to leverage the capabilities of LLMs in real-world problem-solving scenarios.
+
+## 3 Evaluation
+
+We instantiate the proposed LLM-based AI Agent framework (TPTU-OA and TPTU-SA) with different LLMs and evaluate their performance on typical tasks.
+
+### Preparations
+
+Before beginning our evaluation, we first outline the preparations. We will give detailed descriptions of the datasets, available tools, and popular large language models.
+
+#### 3.1.1 Datasets
+
+We first clarify the motivations behind our choice of tools for evaluation. The selection was guided by two primary factors: **the number of tools** to be evaluated and **the specific tools** to be included.
+
+Firstly, regarding the number of tools, it is important to state that our proposed evaluation framework is extensible. It can incorporate any number of tools as pluggable components to be managed by the LLM-based AI agents. Secondly, looking at the current work on tool-augmented LLMs, such as T-Bench [10] and ToolBench [11], we see that only a handful of tools are launched and executed in a single scenario. Meanwhile, API-Bank [12], in a single scenario, typically dispatches only one API tool and awaits its response. APIBench [13] and ToolApaca [14] do not even execute a tool response. Hence, for the sake of simplicity and focus in our evaluation, we have decided to primarily assess two tools (which can be called multiple times) within a single scenario.
+
+Secondly, we also need to decide which specific tools should be used for evaluation. Consider a real-world scenario where we pose the question: "How much budget is required to offer a $100 incentive to each employee who has been with the company for over five years?". To answer this, we first need to retrieve the relevant data from a database, typically using SQL, to find the number of eligible employees. Then, we need to perform a mathematical calculation to estimate the total budget. Such scenarios are quite common in daily life where the formulation and resolution of a question often involve SQL and mathematical tools.
+
+Recognizing the importance of these tools, we have chosen to focus our evaluation on SQL and Python generators, which represent the capabilities of database querying and mathematical computation, respectively. To this end, we have prepared 120 question-answer pairs that vary in complexity. These pairs provide a rigorous assessment of the LLM-based AI agents in understanding, generating, and utilizing these essential tools. For further information on these queries and their corresponding demonstrations, please refer to Appendix A.
+
+#### 3.1.2 Tools
+
+We have defined a total of 12 available tools for the selection of the LLM-based AI agents for evaluation. They are defined as follows:
+
+* SQL generator: Given an input question and a database, create a syntactically correct SQLite query statement.
+* Python generator: Given an input question and some information, generate a syntactically correct Python code.
+* Weather query tool: Given a location, output the current real-time weather at that location.
+* Image generator: Given a text description, generate a related image.
+* Text extractor: Given a link to an image, extract the corresponding text and its position coordinates.
+* Translator: Given a piece of text, translate it into other languages.
+* Bing Searcher: Given a piece of text, conduct a search on the Bing browser and return content.
+
+* Shell generator: Given an input question and some information, generate a syntactically correct Shell code.
+* Java generator: Given an input question and some information, generate a syntactically correct Java code.
+* Wikipedia searcher: Given a piece of text, conduct a search on Wikipedia and return content.
+* Office software: Given a text description, automatically generate corresponding long documents or spreadsheets or PPTs.
+* Movie player: Given a movie name, automatically play the corresponding movie resources.
+
+#### 3.1.3 LLMs
+
+The LLMs evaluated in this paper are listed in Table 2, elaborated as follows:
+
+* **GPT** series developed by OpenAI boasts a powerful language model with a vast number of parameters, enabling it to tackle intricate problems efficiently. This paper aims to evaluate the performance of ChatGPT, which balances the performance with costs (the number of OpenAI API calls).
+* **Claude** is committed to maintaining honesty and ensuring user safety, which is developed by Anthropic. With its impressive size, Claude ranks among the largest language models globally and poses a formidable challenge to ChatGPT as a strong competitor.
+* **InternLM**, a sophisticated language model developed by Shanghai AI Lab, boasts a multi-round dialogue capability and an impressive ability to comprehend super-long text. This language model is meticulously designed to cater to the nuances of the Chinese language, enabling it to comprehensively understand and effectively process Chinese text. Here, we adopted the version with 120 billion parameters.
+* **Ziya** is an expansive and robust pre-training model developed by IDEA, derived from the LLaMa with 13 billion parameters. This comprehensive model exhibits a wide range of capabilities, including translation, programming, and mathematical calculations. Notably, it stands out as a bilingual LLM, highlighting its ability to effectively process and comprehend text in Chinese.
+* **ChatGLM**, developed by Tsinghua University, is an open-source dialogue language model that supports bilingual Q&A in Chinese and English, with a particular focus on Chinese optimization. Built on the General Language Model (GLM) architecture and utilizing model quantization technology, the ChatGLM can be easily deployed on consumer-grade graphics cards, enabling local implementation by users.
+* **Chinese-Alpaca-Plus** is achieved by extending LLaMA's existing vocabulary with an additional 20,000 Chinese tokens from Meta AI (formerly known as Facebook AI Research Laboratory). In this version, we use a model with 33 billion parameters. The training text has been expanded to 120GB, and the fine-tuning instruction data has been increased to 4.3M.
+
+\begin{table}
+\begin{tabular}{c c c} \hline \hline
+**Organization** & **Model Name** & **Model Parameters** \\ \hline OpenAI & ChatGPT[15] & 200B \\ \hline Anthropic & Claude[16] & \textgreater{}52B \\ \hline Shanghai AI Lab & InternLM & 120B \\ \hline IDEA & Ziya-13B & 13B \\ \hline Tsinghua University & ChatGLM-130B[17] & 130B \\ \hline - & Chinese-Alpaca-Plus-33B[18, 19] & 33B \\ \hline \hline \end{tabular}
+\end{table}
+Table 2: The LLMs evaluated in this paper.
+
+### Evaluation on Task Planning Ability
+
+In this section, to evaluate the planning capabilities of the LLM-based AI agents, we have structured the evaluations as follows.
+
+For TPTU-OA, we begin by examining the agents' ability to plan the order of tool use. This is followed by an evaluation of the agents' capacity to not only plan the sequence of tools but also the corresponding subtask descriptions. Subsequently, we conduct a specialized planning evaluation where the agents must generate multiple sequences of key-value pairs of the form {tool: subtask description} in complex problem teardowns. Moreover, we expand the toolset with additional, unrelated tools to further challenge and reassess the planning ability of the LLM-based AI agents.
+
+For TPTU-SA, we follow the regime that the agent should generate multiple sequences of key-value pairs of the form {tool: subtask description} for evaluation.
+
+#### 3.2.1 Tptu-Oa: Tool Order Planning
+
+Here, we utilize two kinds of tools for problem-solving: the SQL generator, which retrieves data from databases, and the Python generator, adept at addressing mathematical questions.
+
+To validate the capacity of the LLM-based AI agents to strategically plan for the tool order, we designed the prompt as shown in Figure 7 of Appendix B. This design is motivated by the goal to assess the ability of LLM-based AI agents to understand complex problems, subsequently decomposing them into a sequence of simpler tasks executed by appropriately selected tools. Specifically, we require the LLM-based AI agent to follow our instructions, select tools from our pre-defined tool set with detailed function descriptions, conform to the given format strictly, and understand the demonstrations to learn from them.
+
+Upon feeding these prompts into the LLM-based AI agents under evaluation, we obtained the following accuracy rates for the tool planning, as shown in Table 3.
+
+The results of our experiments indicate that models, notably Ziya and ChatGLM, frequently grapple with the generation of lists in the correct format. For other models, the predominant challenges lie in generating tools in the correct sequence or in the occasional omission of necessary tools. Nonetheless, the issue of parsing list formats is generally negligible.
+
+These findings suggest that the majority of LLM-based AI agents possess a fundamental capability to analyze the tool needs of a given problem and understand its task requirements. To further explore whether these LLM-based AI agents can effectively break down the original problem into sub-tasks, we proceed to the following section.
+
+#### 3.2.2 Tptu-Oa: Tool Order Planning and Subtask Description Generation
+
+Simply planning the order of tool usage is not sufficient to fully address a problem. To truly solve it, we need to provide a guide or instructions for the usage of each tool, that is, a decomposed subtask description. Therefore, we can decompose the original complex problem into two separate sequences. One sequence represents the order in which the tools are utilized, while the other sequence corresponds to the subtask descriptions that each tool in the tool sequence aims to resolve. A problem is only truly solved when both the tool and subtask description sequences have been successfully planned. In order to verify whether LLM-based AI agents truly have the ability to solve complex problems, we designed a new prompt as shown in Figure 8 of Appendix B. The main improvement is to plan the corresponding subtask description for each tool after the tool planning is completed.
+
+After feeding the prompt to these LLM-based AI agents, we get results shown in Table 4.
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 100\% & 100\% & 45\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**Accuracy** & 45\% & 20\% & 80\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 3: The evaluation results for the planning of tool order generation.
+
+Although the generation of tool sequences and their corresponding subtask descriptions might be an effective way to problem-solving, there is a significant decrease in accuracy for all LLMs as can be seen. We hypothesize that there are a few potential drawbacks to this method:
+
+1. **Difficulty in Error Tracking and Debugging**. Generating the complete tool and subtask sequences may make it more challenging to track and debug errors. If an error arises within the sequence, it might require a total regeneration instead of a simple modification or repair to the erroneous part.
+2. **Tool-Subtask Pairing Issue**. If all tool sequences and subtask descriptions are generated independently, there's an inherent risk of misalignment between the tools and their corresponding subtasks. This could potentially lead to an improper pairing, which, in turn, could result in a flawed or ineffective solution that fails to appropriately resolve the given problem.
+3. **Lack of Flexibility**. The approach may lack this flexibility when facing complex problems requiring adjustments to the tool or subtask sequence.
+4. **Dependency on Global Information**. Generating the entire tool and subtask sequences requires a global understanding and planning of the entire problem. However, in some instances, certain parts of the problem might not be clear at the early stages of problem-solving, which could pose challenges within this framework.
+
+#### 3.2.3 Tptu-Oa: The Planning of Tool-Subtask Pair
+
+To mitigate the aforementioned issue, we propose a novel approach to foster flexible problem-solving with the LLM-based AI agent. We prompt the agent to generate multiple sequences, each consisting of a key-value pair in the format of {tool: subtask description} that associates a tool with its respective subtask description. This allows us to simultaneously plan the tool choice and subtask without the risk of improper matching. Moreover, it offers the flexibility to update the planned sequences in real-time based on evolving problem feedback, enhancing adaptability and efficiency when addressing complex tasks.
+
+With this consideration, we have designed a unique prompt that encourages this advanced problem-solving strategy. In the following section, we delve into the specifics of this prompt design in Figure 9 of Appendix B. The key improvement in this prompt is its directive for the LLM-based AI agents to stringently adhere to the predefined dictionary format. To facilitate this, we offer several demonstrations in our desired format, serving as references for the language model to follow.
+
+After feeding the prompt to these LLM-based AI agents, we get results shown in Table 5.
+
+Analyzing the results from Tables 4 and 5, we observe a marked improvement of 52.9% when the tool-subtask pairs are generated in a unified format compared to separate generation of tools and subtasks.
+
+This significant performance enhancement can likely be attributed to the close coupling between tools and their associated subtasks in our unified generation strategy. When tools and subtasks are
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 55\% & 15\% & 10\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**Accuracy** & 10\% & 0\% & 45\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 4: The evaluation results for the planning of tool order and subtask description generation.
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 75\% & 90\% & 20\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**Accuracy** & 0\% & 5\% & 55\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 5: The evaluation results for the planning of Tool-Subtask pair.
+
+generated separately, there is a potential disconnect or lack of coherence between the two, which could lead to less accurate or efficient solutions. In contrast, by generating tool-subtask pairs together, we ensure that each tool is directly tied to its relevant subtask, leading to a more coordinated and effective problem-solving approach. This might explain the observed increase in overall performance.
+
+#### 3.2.4 TPTU-OA: The Planning of Tool-Subtask Pair with Unrelated Tools
+
+So far, our analysis and evaluation have been primarily focused on the LLM-based AI agents' proficiency in planning with specific tools. However, we are also interested in how it would perform when faced with many irrelevant or similar tools. Therefore, for a more comprehensive assessment, we expanded the prompt in Table 9 to include an additional ten unrelated tools, as illustrated in Figure 10 of Appendix B.
+
+After feeding the prompt to these LLM-based AI agents, we get results shown in Table 6. The results from our expanded evaluation demonstrate that even when presented with irrelevant or similar tools and descriptions, LLM-based AI agents consistently avoid selecting these unrelated tools (i.e., the accuracy has remained unchanged or exhibited only a marginal decrease compared with Table 5). This outcome indicates the effectiveness of our designed prompt, which successfully guides the LLM-based agents to understand the appropriate tool sequence for complex problem decomposition.
+
+This observation reinforces the notion that a well-structured and informative prompt can efficiently guide AI agents to understand the core essence of the problem, thereby enabling them to sift through irrelevant information and focus on key tasks. This successful discrimination against unrelated tools also points towards the models' ability to understand the specific context of a problem and select the appropriate tools, thereby enhancing the overall problem-solving process.
+
+#### 3.2.5 TPTU-SA: The Planning of Tool-Subtask Pair Generation
+
+Upon identifying the drawbacks of first generating a list of tools and then generating corresponding subtask descriptions, we decided to focus subsequent tests on the generation of tool-subtask pairs. Consequently, in this section, we evaluate the capability of TPTU-SA to generate these tool-subtask pairs.
+
+To achieve the goal of recursively generating tool-subtask pairs, we have designed prompts as illustrated in Figure 11 of Appendix B.
+
+The evaluation results are shown in Table 7. Compared with results shown in Table 5, TPTU-SA generally performs better than TPTU-OA especially for high-performing LLMs (e.g., ChatGPT, Claude and InterLM). We propose the following potential reasons for this observation:
+
+1. **Sequentiality Mimics Human Problem-Solving**: In real-world scenarios, humans tend to solve complex problems by breaking them down into smaller, manageable subtasks which are often handled sequentially. Sequential agents are designed to mimic this step-by-step approach, which might inherently suit complex problem-solving better.
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 70\% & 90\% & 10\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InterLM \\ \cline{2-4}
+**Accuracy** & 0\% & 5\% & 50\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 6: The evaluation results for the planning of Tool-Subtask pair with unrelated tools.
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 80\% & 100\% & 10\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InterLM \\ \cline{2-4}
+**Accuracy** & 0\% & 0\% & 65\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 7: The evaluation results for the planning of Tool-Subtask with the sequential agent.
+
+2. **Richer Contextual Understanding**: Sequential agents are exposed to the outcome of each previous subtask before moving on to the next one. This iterative process could facilitate a richer understanding of the problem context, enabling more accurate task planning and tool usage.
+3. **Flexibility in Task Management**: In comparison to one-step agents, sequential agents might have more flexibility in managing tasks. They have the opportunity to correct errors or adjust their strategy after each step, which can lead to improved overall performance.
+4. **Improved Learning From History**: The sequential process provides a history of actions and results which can be beneficial in learning. The agent can use this history to make better predictions about what tool to use next or what subtask to tackle, leading to more accurate and efficient problem-solving.
+
+These points of analysis suggest that the structure and operation of sequential agents inherently confer certain advantages in complex problem-solving scenarios, leading to their superior performance.
+
+### Evaluation on Tool Usage Ability
+
+Before evaluating the end-to-end multi-tool usage ability of LLM-based AI agents, we first evaluate the effectiveness of single-tool usage for SQL generation and mathematical code generation.
+
+Subsequently, to assess the end-to-end performance of LLMs across various tools, two types of agents (TPTU-OA and TPTU-SA) were developed and several LLMs were subjected to testing under these agents. The role of the agents is to break down complex questions into simpler sub-questions and plan corresponding tools to solve them, based on the available toolset and corresponding tool descriptions.
+
+#### 3.3.1 The effectiveness of Single Tool Usage
+
+Our aim is to systematically assess how effectively these models can use various tools, focusing on their proficiency with SQL and other coding languages.
+
+The Effectiveness of simple SQL CreationUsing the schemas provided in Table 12 and Table 13, we construct questions similar to those in Table 14, and refer readers to Appendix A. These questions are posed to various LLMs using our specifically designed prompts in Appendix B.
+
+Following the tailored prompts, the LLMs are evaluated based on their responses to the presented queries. The results of this comprehensive assessment are compiled and exhibited in Figure 8.
+
+This verifies the capabilities of each LLM in handling varying simple single-table SQL queries, thus providing a basis for comparison and analysis.
+
+The Effectiveness of Complex Nested SQL CreationUsing the schemas provided in Table 15, 16, 17, and 18, we construct questions similar to those in Table 19, and refer readers to Appendix A. For complex nested SQL questions, to further verify the SQL tool creation capability of LLMs, we have designed two types of prompts. One is the direct-guidance type, which explicitly informs the model that it needs to generate nested SQL query statements, as shown in Figure 13 in Appendix B.
+
+The other is based on the Chain-of-Thought (CoT) [20] approach, which leverages the model's ability to reason step by step to comprehend and craft SQL tools, and the prompt is shown in Figure 14 in Appendix B. This method guides the model to sequentially generate SQL query clauses based on the problem context, thus breaking down the complex query generation task into smaller and manageable
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 90\% & 100\% & 50\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**Accuracy** & 30\% & 20\% & 90\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 8: The evaluation results for simple SQL questions.
+
+subtasks. This approach provides the model with a structured way to handle complex SQL tasks and showcases its capacity to engage in incremental reasoning and problem-solving.
+
+The design of these two types of prompts serves as the backbone of our evaluation for complex nested SQL questions. While the direct-guidance approach focuses on testing the model's raw ability to generate SQL queries when explicitly instructed, the CoT-based approach evaluates a more nuanced capability: the model's reasoning and problem-solving skills in a step-by-step manner. Both these methods present unique challenges and offer valuable insights into the strengths and potential areas of improvement for the large language model's SQL tool generation ability. Subsequently, we will explore these two dimensions based on our experimental evaluations shown in Table 9.
+
+From the above results in Table 9, it is clear that different models possess varying levels of proficiency in handling complex nested SQL tasks. Some models, like Claude, exhibit a robust capability in SQL generation, no matter whether the approach is direct or CoT-based. Most of these models demonstrate the SQL tool usage capability.
+
+Specifically, some models such as ChatGLM show a distinct preference for the CoT-based approach, their performance improves when problems are broken down into smaller, manageable sub-tasks. This suggests that these models may have a stronger ability in sequential problem-solving and benefit more from step-by-step guidance. Conversely, models like Ziya and InternLM show a drop in performance when tasks are guided in the CoT-based format. This might indicate challenges in managing dependencies between sub-tasks or handling the continuity in sequential problem-solving. Lastly, Chinese-Alpaca-Plus shows significant room for improvement in complex SQL generation tasks. This shows that not all models are equally suited to handle advanced problem-solving involving nested SQL queries.
+
+Overall, these findings underscore the importance of tailoring evaluation and training methodologies to the individual strengths and weaknesses of each model. By adopting this approach, we can better understand the performance variations across different models and provide targeted improvements to enhance their problem-solving abilities. Furthermore, this analysis highlights the potential of LLM-based agents in real-world applications, and the need to push their boundaries through continued research and development.
+
+The Effectiveness of Mathematical Code CreationFollowing our evaluation of the LLM's proficiency in creating complex SQL queries, we now shift our focus to another tool creation: the creation of mathematical code. To the best of our knowledge, while large language models possess significant capabilities, they often fall short of providing highly accurate solutions to mathematical problems. Guiding these LLMs to generate mathematical code, and subsequently leveraging external tools to execute and derive the solutions, could significantly enhance their ability to tackle mathematical challenges.
+
+In the upcoming section, we will conduct a detailed evaluation of guiding these LLMs to generate mathematical code. We aim to shed light on the true capability of these models in generating mathematical code and to elucidate the extent to which they can be utilized to aid in mathematical problem-solving. The prompt about how to guide LLMs is shown in Figure 15 in Appendix B.
+
+The results shown in Table 10 indicate that the capabilities of LLM-based agents to generate mathematical code vary considerably. High-performing models like ChatGPT, Claude, and InternLM display excellent proficiency, suggesting their potent ability to solve complex mathematical tasks. Middle-tier models, such as Ziya, show moderate success, indicating the potential for improvement and adaptability with the right training and optimization. Surprisingly, Alpaca demonstrated a notable
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Direct-based** & 80\% & 100\% & 50\% \\
+**CoT-based** & 80\% & 100\% & 40\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**Direct-based** & 60\% & 0\% & 60\% \\
+**CoT-based** & 70\% & 0\% & 50\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 9: The evaluation results for complex nested SQL questions.
+
+proficiency in mathematical tasks, despite its poor performance in SQL generation, suggesting a possible inclination towards mathematical problems. In contrast, ChatGLM struggles significantly with mathematical code generation, underlining a potential weak spot in its capabilities and the need for focused improvement in this area.
+
+Overall, these results underscore the task-dependent nature of LLMs' capabilities and highlight the importance of recognizing their individual strengths and weaknesses for optimal model guidance and enhanced problem-solving.
+
+#### 3.3.2 Tptu-Oa and Tptu-Sa: Tool Usage for Multiple Tools
+
+We now aim to utilize the one-step agent and sequential agent, which we designed, to conduct an evaluation involving multiple tools. Corresponding prompts for each agent type have been crafted and are presented in Figure 16 and Figure 17 of Appendix B, respectively.
+
+In this phase of the evaluation, we need to automatically invoke the respective tools through code and produce the results. Given that user interface-based LLMs lack the capability to call external tools, we will only utilize the following four API-based LLMs (ChatGPT, Ziya, Chinese-Alpaca, and InternLM) for this comprehensive evaluation of external tool usage ability.
+
+With agents mentioned above, the final results are presented in Table 11. The evaluation results demonstrate varying levels of task planning and tool usage capabilities among the four API-based LLMs. In the TPTU-OA evaluation, ChatGPT achieved a performance rate of 50%, significantly outperforming the other models, with InternLM at 15%, while both Ziya and Chinese-Alpaca did not manage to complete any tasks successfully, resulting in a score of 0%. In the TPTU-SA evaluation, an overall slight improvement was observed. ChatGPT maintained its leading position, with a slightly improved performance rate of 55%. InternLM also exhibited better performance, achieving a score of 20%, whereas Ziya and Chinese-Alpaca-Plus again failed to register any successful task completion.
+
+These results reflect a notable discrepancy in the performance of LLMs when it comes to using external tools. ChatGPT and InternLM have demonstrated some ability to navigate these tasks, but their performance rates suggest there is significant room for improvement. Ziya and Chinese-Alpaca-Plus' performance indicates a struggle to effectively utilize external tools in their current state.
+
+The differential performance between the TPTU-OA and TPTU-SA evaluation hints at the possible impact of the agent design on the LLMs' task execution ability. In particular, the performance increase under the sequential agent framework suggests that breaking down tasks into sequential steps might help LLM-based AI agents better utilize external tools. This insight could prove valuable in future improvements and developments of LLM-based AI agents. However, even with this approach, it is clear that LLM-based AI agents are far from perfect when it comes to effectively using external tools for complex tasks. This finding underlines the importance of further investigation and improvement in this domain.
+
+\begin{table}
+\begin{tabular}{c c c c} \hline \hline
+**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}
+**Accuracy** & 90\% & 85\% & 50\% \\ \hline
+**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**Accuracy** & 0\% & 55\% & 95\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 10: The evaluation results for mathematical questions.
+
+\begin{table}
+\begin{tabular}{c c c c c} \hline \hline
+**Model** & ChatGPT & Ziya & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}
+**TPTU-OA** & 50\% & 0\% & 0\% & 15\% \\
+**TPTU-SA** & 55\% & 0\% & 0\% & 20\% \\ \hline \hline \end{tabular}
+\end{table}
+Table 11: The evaluation results for end-to-end ability of multiple tools.
+
+### Insightful Observations
+
+Upon closer observation of our experimental results, we have identified several phenomena that deserved further exploration. These findings serve to broaden our understanding of LLM-based agents' behavior and capabilities and provide essential insights that could shape future research in this field. In the following, we will dissect these phenomena as shown in Figure 3 - 6, casting light on the weaknesses of LLM-based agents in the context of task planning and tool usage.
+
+1. **Misunderstanding Output Formats**: LLMs frequently encounter difficulty when output is required in specific formats such as lists or dictionaries. One such example includes inconsistencies between the number of tools and corresponding subtasks, leading to formatting issues that hinder the correct execution of tasks. 
+2. **Struggling to Grasp Task Requirements**: LLMs might incorrectly disintegrate subproblems or apply unsuitable tools to carry out the subproblem. For example, an LLM might attempt to solve a purely mathematical problem by employing an SQL tool or could misunderstand similar terms like cube extraction and cube roots. 
+3. **Endless Extensions**: LLMs tend to overutilize a particular tool, even in instances where a single use would suffice for the correct result. This issue can lead to extended and nonsensical planning, where the same subtask is repeatedly solved. 
+4. **Lack of Summary Skills**: LLMs do not take into account the responses to subproblems, relying instead on their internalized knowledge to generate the final answer. This may lead to a scenario where the final response only addresses a portion of the original query.
+
+By identifying and addressing these common issues, we stand a better chance at improving and refining LLMs, thereby unlocking their full potential.
+
+Figure 4: Solve a purely mathematical problem by employing a SQL generator.
+
+Figure 3: Inconsistencies between the number of tools and corresponding subtasks.
+
+## 4 Related Work
+
+The remarkable capacity for usage and creation of tools have facilitated the transcendence of our innate physical and cognitive constraints, thereby profoundly advancing the progress and prosperity of human civilization and society. The swift advancement of LLM has rendered it feasible to use and create tools like humans. The integration of specialized tools with LLM has unlocked substantial potential in addressing intricate tasks. In this section, we offer a concise synopsis of the relevant research pertaining to tool learning based on LLMs.
+
+### Tool Usage
+
+The initial advancements in tool learning have been constrained by the capabilities of artificial intelligence (AI) models. [21] Traditional deep learning approaches exhibit limitations in terms of comprehension of tool functionality and user intentions, and common sense reasoning abilities. Consequently, these limitations directly result in a notable decline in the stability and precision of tool learning methodologies. Recently, the advent of LLM has marked a pivotal juncture in the realm of tool learning. LLMs encompass a broad spectrum of common sense cognitive capabilities and exhibit remarkable proficiencies in natural language processing, reasoning, and interactive decision-making [22, 23, 24, 25, 26]. These attributes furnish indispensable prerequisites for LLMs to comprehend user intentions and effectively employ tools in tackling intricate tasks [27]. Simultaneously, the advancement of fine-tuning [28, 29, 30, 31, 32] and in-context learning [33, 34] technology has offered robust support to LLM in addressing increasingly intricate challenges. In addition, tool usage can mitigate the inherent limitations of LLMs, encompassing the acquisition of up-to-date information from real-world events, refined mathematical computational abilities, and the mitigation of potential hallucinatory phenomena. [35]
+
+Within the realm of embodied intelligence [36, 37, 38], LLM engages in direct interactions with tangible tools like robots in order to enhance their cognitive abilities, optimize work productivity, and expand functional capacities. LLM possesses the capability to automatically devise action steps based on user intentions, enabling the guidance of robots in the completion of tasks [39, 40, 41, 42, 43, 44, 45, 46, 47], or alternatively,
+
+Figure 5: Unnecessary repetition of subtasks.
+
+Figure 6: Answering questions using common sense instead of generating code.
+
+to directly generate underlying code that can be executed by robots [48; 49; 50; 51; 52]. Palm-E [44] introduced a multimodal language model which seamlessly integrates sensor data into its framework, enabling efficient planning of robot actions and task completion. Code as Policies (CaP) [52] facilitates the transformation of natural language instructions into code fragments that can be directly compiled and executed on robots. As for Inner Monologue [42], LLM incorporates diverse environmental feedback to construct inner monologues, thereby formulating effective robot control strategies. Furthermore, LP-SLAM [39] proposes a simultaneous localization and mapping (SLAM) system empowered with language perception capabilities, exploiting the potential of ChatGPT. PromptCraft [51], on the other hand, devises a function library tailored to ChatGPT on the robot platform, streamlining the conversion of user intentions into executable tasks via the underlying backend API.
+
+In addition to directly changing the real environment through interaction with tools in the physical world, LLM can also utilize software tools such as search engines [53; 54; 55; 56; 57; 58; 59; 60; 61], mobile [62; 63], Microsoft Office [64; 65], calculators [66; 67; 68], deep models [69; 70; 71; 72; 73; 74; 75; 76] and other versatile APIs [77; 78; 79; 80; 14; 81] to enhance model performance or complete complex workflows through flexible control of the software. Toolformer [78] employs a self-supervised methodology to fine-tune the language model, enabling it to acquire the ability to automatically invoke APIs. ART [82] leverages CoT [20] and In-context Learning [76; 35] techniques to automatically generate multi-step reasoning processes for new tasks, while also selecting and utilizing the most appropriate available tool at each step. ASH [56] utilizes LLM for sequence hierarchical decision-making to achieve web navigation tasks. WebGPT [60] and WebCPM [58] use network search to assist in implementing Question Answering tasks. In addition, RCI [83] recursively criticizes and improves itself to execute computer tasks guided by natural language according to the prompting scheme. To achieve the analysis and processing of tables, TableGPT [65] employs a table encoder to transform tabular data into vector representations, which are then fed into an LLM for inference in combination with user queries.
+
+### Tool Creation
+
+The usage of tools is contingent upon the accessibility of external tools. Recently, efforts have been made to employ LLM as a tool creator in order to generate tools that can be utilized for diverse requests [84; 85; 86; 87; 88; 89; 90; 91]. This development has consequently raised the demands placed on LLM. And these created tools are typically implemented as Python or SQL functions. LATM [84], for example, leverages the prowess of GPT-4 to create tools, and the usage of more cost-effective models has shown potential in exhibiting performance on par with larger models for these tool applications. EVAPORATE [90] involves the synthesis of multiple functions, which are subsequently utilized at a large scale to efficiently process documents and generate structured views.
+
+## 5 Conclusion
+
+In this paper, we have introduced a structured framework specially designed for LLM-based AI Agents, with an emphasis on their abilities in task planning and tool usage. This framework, coupled with our design of two distinct types of agents assigned for the inference process, allows for a comprehensive evaluation of the capabilities of current open-source LLMs, thereby yielding critical insights into their effectiveness. Furthermore, our research highlights the significant potential of LLMs in managing complex tasks, revealing the exciting prospects they hold for future research and development. As we continue to explore and improve upon these models, we move closer to unlocking their full potential in a wide range of real-world applications.
+
+## Acknowledgements
+
+This work was conducted collaboratively among the authors.
+
+Hangyu Mao and Rui Zhao led the project, formulating the central idea and laying out the framework for the primary literature review.
+
+Regarding the literature review phase, the surveys were conducted by various team members. Guoqing Du and Jingqing Ruan explored DNN-based Tool Scheduling by LLMs; Tianpeng Bao and Yihong Chen investigated Physical/Robot Tool Scheduling by LLMs; and Shiwei Shi and Zhiwei Xu handled the survey of API or GUI-based Tool Scheduling by LLMs. Bin Zhang summarized these papers and synthesized an overarching summary.
+
+As for the evaluation phase, Yihong Chen, Tianpeng Bao, Jingqing Ruan, Guoqing Du, Zhiwei Xu, Shiwei Shi, and Bin Zhang performed the experiments and analyzed the data. Hangyu Mao assisted in the analysis of the experimental phenomena and offered constructive suggestions for improvements. Xingyu Zeng and Rui Zhao provided invaluable feedback, contributed to the direction of the research. All authors participated in the discussion.
+
+Regarding the manuscript phase, Hangyu Mao organized the overall chapters of the manuscript and mainly wrote the methodology part, and provided assistance in other parts. Jingqing Ruan and Yihong Chen wrote the evaluation section. Bin Zhang wrote the summary of the literature review. Each author read and approved the final manuscript.
+
+The authors would like to thank Feng Zhu, Ziyue Li, Kun Wang, Yuhang Ran, Mengying Xu, Pengfei Jia, and Shaobo Lin for their valuable feedback, discussion, and participation in this project.
+
+## References
+
+* [1] W. X. Zhao, K. Zhou, J. Li, T. Tang, X. Wang, Y. Hou, Y. Min, B. Zhang, J. Zhang, Z. Dong _et al._, "A survey of large language models," _arXiv preprint arXiv:2303.18223_, 2023.
+* [2] T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry, A. Askell _et al._, "Language models are few-shot learners," _Advances in neural information processing systems_, vol. 33, pp. 1877-1901, 2020.
+* [3] J. Wei, M. Bosma, V. Y. Zhao, K. Guu, A. W. Yu, B. Lester, N. Du, A. M. Dai, and Q. V. Le, "Finetuned language models are zero-shot learners," _arXiv preprint arXiv:2109.01652_, 2021.
+* [4] N. R. Jennings, K. Sycara, and M. Wooldridge, "A roadmap of agent research and development," _Autonomous agents and multi-agent systems_, vol. 1, pp. 7-38, 1998.
+* [5] N. R. Jennings and M. Wooldridge, "Applying agent technology," _Applied Artificial Intelligence an International Journal_, vol. 9, no. 4, pp. 357-369, 1995.
+* [6] S. Franklin and A. Graesser, "Is it an agent, or just a program?: A taxonomy for autonomous agents," in _International workshop on agent theories, architectures, and languages_. Springer, 1996, pp. 21-35.
+* [7] C. Castellranchi, "Modelling social action for ai agents," _Artificial intelligence_, vol. 103, no. 1-2, pp. 157-182, 1998.
+* [8] J. Ferber and G. Weiss, _Multi-agent systems: an introduction to distributed artificial intelligence_. Addison-wesley Reading, 1999, vol. 1.
+* [9] L. Panait and S. Luke, "Cooperative multi-agent learning: The state of the art," _Autonomous agents and multi-agent systems_, vol. 11, pp. 387-434, 2005.
+* [10] Q. Xu, F. Hong, B. Li, C. Hu, Z. Chen, and J. Zhang, "On the tool manipulation capability of open-source large language models," _arXiv preprint arXiv:2305.16504_, 2023.
+* [11] Y. Qin, S. Liang, Y. Ye, K. Zhu, L. Yan, Y. Lu, Y. Lin, X. Cong, X. Tang, B. Qian _et al._, "Toolllm: Facilitating large language models to master 16000+ real-world apis," _arXiv preprint arXiv:2307.16789_, 2023.
+* [12] M. Li, F. Song, B. Yu, H. Yu, Z. Li, F. Huang, and Y. Li, "Api-bank: A benchmark for tool-augmented llms," _arXiv preprint arXiv:2304.08244_, 2023.
+* [13] S. G. Patil, T. Zhang, X. Wang, and J. E. Gonzalez, "Gorilla: Large language model connected with massive apis," _arXiv preprint arXiv:2305.15334_, 2023.
+* [14] Q. Tang, Z. Deng, H. Lin, X. Han, Q. Liang, and L. Sun, "Toolapaca: Generalized tool learning for language models with 3000 simulated cases," _arXiv preprint arXiv:2306.05301_, 2023.
+
+* [15] L. Ouyang, J. Wu, X. Jiang, D. Almeida, C. Wainwright, P. Mishkin, C. Zhang, S. Agarwal, K. Slama, A. Ray _et al._, "Training language models to follow instructions with human feedback," _Advances in Neural Information Processing Systems_, vol. 35, pp. 27 730-27 744, 2022.
+* [16] Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon _et al._, "Constitutional ai: Harmlessness from ai feedback," _arXiv preprint arXiv:2212.08073_, 2022.
+* [17] A. Zeng, X. Liu, Z. Du, Z. Wang, H. Lai, M. Ding, Z. Yang, Y. Xu, W. Zheng, X. Xia _et al._, "Glm-130b: An open bilingual pre-trained model," _arXiv preprint arXiv:2210.02414_, 2022.
+* [18] H. Touvron, T. Lavril, G. Izacard, X. Martinet, M.-A. Lachaux, T. Lacroix, B. Roziere, N. Goyal, E. Hambro, F. Azhar _et al._, "Llama: Open and efficient foundation language models," _arXiv preprint arXiv:2302.13971_, 2023.
+* [19] Y. Cui, Z. Yang, and X. Yao, "Efficient and effective text encoding for chinese llama and alpaca," _arXiv preprint arXiv:2304.08177_, 2023.
+* [20] J. Wei, X. Wang, D. Schuurmans, M. Bosma, B. Ichter, F. Xia, E. H. Chi, Q. V. Le, and D. Zhou, "Chain-of-thought prompting elicits reasoning in large language models," _Neural Information Processing Systems_, 2022.
+* [21] R. Bommasani, D. A. Hudson, E. Adeli, R. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill _et al._, "On the opportunities and risks of foundation models," _arXiv preprint arXiv:2108.07258_, 2021.
+* [22] M. Mosbach, T. Pimentel, S. Ravfogel, D. Klakow, and Y. Elazar, "Few-shot fine-tuning vs. in-context learning: A fair comparison and evaluation," _arXiv preprint arXiv:2305.16938_, 2023.
+* [23] J. Yang, H. Jin, R. Tang, X. Han, Q. Feng, H. Jiang, B. Yin, and X. Hu, "Harnessing the power of llms in practice: A survey on chatgpt and beyond," _arXiv preprint arXiv:2304.13712_, 2023.
+* [24] C. Zhang, C. Zhang, C. Li, Y. Qiao, S. Zheng, S. K. Dam, M. Zhang, J. U. Kim, S. T. Kim, J. Choi _et al._, "One small step for generative ai, one giant leap for agi: A complete survey on chatgpt in aige era," _arXiv preprint arXiv:2304.06488_, 2023.
+* [25] F. Yu, H. Zhang, and B. Wang, "Nature language reasoning, a survey," _arXiv preprint arXiv:2303.14725_, 2023.
+* [26] Z. Wang, G. Zhang, K. Yang, N. Shi, W. Zhou, S. Hao, G. Xiong, Y. Li, M. Y. Sim, X. Chen _et al._, "Interactive natural language processing," _arXiv preprint arXiv:2305.13246_, 2023.
+* [27] Y. Qin, S. Hu, Y. Lin, W. Chen, N. Ding, G. Cui, Z. Zeng, Y. Huang, C. Xiao, C. Han _et al._, "Tool learning with foundation models," _arXiv preprint arXiv:2304.08354_, 2023.
+* [28] W. Yu, C. Zhu, Z. Li, Z. Hu, Q. Wang, H. Ji, and M. Jiang, "A survey of knowledge-enhanced text generation," _ACM Computing Surveys_, vol. 54, no. 11s, pp. 1-38, 2022.
+* [29] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen, "Lora: Low-rank adaptation of large language models," _arXiv preprint arXiv:2106.09685_, 2021.
+* [30] N. Houlsby, A. Giurgiu, S. Jastrzebski, B. Morrone, Q. De Laroussilhe, A. Gesmundo, M. Attariyan, and S. Gelly, "Parameter-efficient transfer learning for nlp," in _International Conference on Machine Learning_. PMLR, 2019, pp. 2790-2799.
+* [31] X. L. Li and P. Liang, "Prefix-tuning: Optimizing continuous prompts for generation," _arXiv preprint arXiv:2101.00190_, 2021.
+* [32] X. Liu, Y. Zheng, Z. Du, M. Ding, Y. Qian, Z. Yang, and J. Tang, "Gpt understands, too," _arXiv preprint arXiv:2103.10385_, 2021.
+* [33] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao, "React: Synergizing reasoning and acting in language models," _arXiv preprint arXiv:2210.03629_, 2022.
+
+* [34] T. Khot, H. Trivedi, M. Finlayson, Y. Fu, K. Richardson, P. Clark, and A. Sabharwal, "Decomposed prompting: A modular approach for solving complex tasks," _arXiv preprint arXiv:2210.02406_, 2022.
+* [35] G. Mialon, R. Dessi, M. Lomeli, C. Nalmparantis, R. Pasunuru, R. Raileanu, B. Roziere, T. Schick, J. Dwivedi-Yu, A. Celikyilmaz _et al._, "Augmented language models: a survey," _arXiv preprint arXiv:2302.07842_, 2023.
+* [36] J. Duan, S. Yu, H. L. Tan, H. Zhu, and C. Tan, "A survey of embodied ai: From simulators to research tasks," _IEEE Transactions on Emerging Topics in Computational Intelligence_, vol. 6, no. 2, pp. 230-244, 2022.
+* [37] M. Savva, A. Kadian, O. Maksymets, Y. Zhao, E. Wijmans, B. Jain, J. Straub, J. Liu, V. Koltun, J. Malik _et al._, "Habitat: A platform for embodied ai research," in _Proceedings of the IEEE/CVF international conference on computer vision_, 2019, pp. 9339-9347.
+* [38] S. Franklin, "Autonomous agents as embodied ai," _Cybernetics & Systems_, vol. 28, no. 6, pp. 499-520, 1997.
+* [39] W. Zhang, Y. Guo, L. Niu, P. Li, C. Zhang, Z. Wan, J. Yan, F. U. D. Farrukh, and D. Zhang, "Lp-slam: Language-perceptive rgb-d slam system based on large language model," _arXiv preprint arXiv:2303.10089_, 2023.
+* [40] D. Shah, B. Osinski, S. Levine _et al._, "Lm-nav: Robotic navigation with large pre-trained models of language, vision, and action," in _Conference on Robot Learning_. PMLR, 2023, pp. 492-504.
+* [41] A. Brohan, Y. Chebotar, C. Finn, K. Hausman, A. Herzog, D. Ho, J. Ibarz, A. Irpan, E. Jang, R. Julian _et al._, "Do as i can, not as i say: Grounding language in robotic affordances," in _Conference on Robot Learning_. PMLR, 2023, pp. 287-318.
+* [42] W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang, P. Florence, A. Zeng, J. Tompson, I. Mordatch, Y. Chebotar _et al._, "Inner monologue: Embodied reasoning through planning with language models," _arXiv preprint arXiv:2207.05608_, 2022.
+* [43] B. Chen, F. Xia, B. Ichter, K. Rao, K. Gopalakrishnan, M. S. Ryoo, A. Stone, and D. Kappler, "Open-vocabulary queryable scene representations for real world planning," in _2023 IEEE International Conference on Robotics and Automation (ICRA)_. IEEE, 2023, pp. 11 509-11 522.
+* [44] D. Driess, F. Xia, M. S. Sajjadi, C. Lynch, A. Chowdhery, B. Ichter, A. Wahid, J. Tompson, Q. Vuong, T. Yu _et al._, "Palm-e: An embodied multimodal language model," _arXiv preprint arXiv:2303.03378_, 2023.
+* [45] N. Wake, A. Kanehira, K. Sasabuchi, J. Takamatsu, and K. Ikeuchi, "Chatgpt empowered long-step robot control in various environments: A case application," _arXiv preprint arXiv:2304.03893_, 2023.
+* [46] K. Rana, J. Haviland, S. Garg, J. Abou-Chakra, I. Reid, and N. Suenderhauf, "Sayplan: Grounding large language models using 3d scene graphs for scalable task planning," _arXiv preprint arXiv:2307.06135_, 2023.
+* [47] C. H. Song, J. Wu, C. Washington, B. M. Sadler, W.-L. Chao, and Y. Su, "Llm-planner: Few-shot grounded planning for embodied agents with large language models," _arXiv preprint arXiv:2212.04088_, 2022.
+* [48] A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu _et al._, "Rt-1: Robotics transformer for real-world control at scale," _arXiv preprint arXiv:2212.06817_, 2022.
+* [49] A. Stone, T. Xiao, Y. Lu, K. Gopalakrishnan, K.-H. Lee, Q. Vuong, P. Wohlhart, B. Zitkovich, F. Xia, C. Finn _et al._, "Open-world object manipulation using pre-trained vision-language models," _arXiv preprint arXiv:2303.00905_, 2023.
+
+* [50] S. Reed, K. Zolna, E. Parisotto, S. G. Colmenarejo, A. Novikov, G. Barth-Maron, M. Gimenez, Y. Sulsky, J. Kay, J. T. Springenberg _et al._, "A generalist agent," _arXiv preprint arXiv:2205.06175_, 2022.
+* [51] S. Vemprala, R. Bonatti, A. Bucker, and A. Kapoor, "Chatgpt for robotics: Design principles and model abilities," _Microsoft Auton. Syst. Robot. Res_, vol. 2, p. 20, 2023.
+* [52] J. Liang, W. Huang, F. Xia, P. Xu, K. Hausman, B. Ichter, P. Florence, and A. Zeng, "Code as policies: Language model programs for embodied control," in _2023 IEEE International Conference on Robotics and Automation (ICRA)_. IEEE, 2023, pp. 9493-9500.
+* [53] K. Guu, K. Lee, Z. Tung, P. Pasupat, and M. Chang, "Retrieval augmented language model pre-training," in _International conference on machine learning_. PMLR, 2020, pp. 3929-3938.
+* [54] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Kuttler, M. Lewis, W.-t. Yih, T. Rocktaschel _et al._, "Retrieval-augmented generation for knowledge-intensive nlp tasks," _Advances in Neural Information Processing Systems_, vol. 33, pp. 9459-9474, 2020.
+* [55] S. Borgeaud, A. Mensch, J. Hoffmann, T. Cai, E. Rutherford, K. Millican, G. B. Van Den Driessche, J.-B. Lespiau, B. Damoc, A. Clark _et al._, "Improving language models by retrieving from trillions of tokens," in _International conference on machine learning_. PMLR, 2022, pp. 2206-2240.
+* [56] A. Sridhar, R. Lo, F. F. Xu, H. Zhu, and S. Zhou, "Hierarchical prompting assists large language model on web navigation," _arXiv preprint arXiv:2305.14257_, 2023.
+* [57] H. Furuta, O. Nachum, K.-H. Lee, Y. Matsuo, S. S. Gu, and I. Gur, "Multimodal web navigation with instruction-finetuned foundation models," _arXiv preprint arXiv:2305.11854_, 2023.
+* [58] Y. Qin, Z. Cai, D. Jin, L. Yan, S. Liang, K. Zhu, Y. Lin, X. Han, N. Ding, H. Wang _et al._, "Webcpm: Interactive web search for chinese long-form question answering," _arXiv preprint arXiv:2305.06849_, 2023.
+* [59] S. Yao, H. Chen, J. Yang, and K. Narasimhan, "Webshop: Towards scalable real-world web interaction with grounded language agents," _Advances in Neural Information Processing Systems_, vol. 35, pp. 20 744-20 757, 2022.
+* [60] R. Nakano, J. Hilton, S. Balaji, J. Wu, L. Ouyang, C. Kim, C. Hesse, S. Jain, V. Kosaraju, W. Saunders _et al._, "Webgpt: Browser-assisted question-answering with human feedback," _arXiv preprint arXiv:2112.09332_, 2021.
+* [61] Z. Yang, P. Qi, S. Zhang, Y. Bengio, W. W. Cohen, R. Salakhutdinov, and C. D. Manning, "Hotpotqa: A dataset for diverse, explainable multi-hop question answering," _arXiv preprint arXiv:1809.09600_, 2018.
+* [62] B. Wang, G. Li, and Y. Li, "Enabling conversational interaction with mobile ui using large language models," in _Proceedings of the 2023 CHI Conference on Human Factors in Computing Systems_, 2023, pp. 1-17.
+* [63] D. Zhang, L. Chen, and K. Yu, "Mobile-env: A universal platform for training and evaluation of mobile interaction," _arXiv preprint arXiv:2305.08144_, 2023.
+* [64] H. Li, J. Su, Y. Chen, Q. Li, and Z. Zhang, "Sheetcopilot: Bringing software productivity to the next level through large language models," _arXiv preprint arXiv:2305.19308_, 2023.
+* [65] L. Zha, J. Zhou, L. Li, R. Wang, Q. Huang, S. Yang, J. Yuan, C. Su, X. Li, A. Su _et al._, "Tablegpt: Towards unifying tables, nature language and commands into one gpt," _arXiv preprint arXiv:2307.08674_, 2023.
+* [66] Z. Chen, K. Zhou, B. Zhang, Z. Gong, W. X. Zhao, and J.-R. Wen, "Chatcot: Tool-augmented chain-of-thought reasoning on\(\backslash\)\(\backslash\)chat-based large language models," _arXiv preprint arXiv:2305.14323_, 2023.
+* [67] A. Parisi, Y. Zhao, and N. Fiedel, "Talm: Tool augmented language models," _arXiv preprint arXiv:2205.12255_, 2022.
+
+* [68] K. Cobbe, V. Kosaraju, M. Bavarian, M. Chen, H. Jun, L. Kaiser, M. Plappert, J. Tworek, J. Hilton, R. Nakano _et al._, "Training verifiers to solve math word problems," _arXiv preprint arXiv:2110.14168_, 2021.
+* [69] Z. Yang, L. Li, J. Wang, K. Lin, E. Azarnasab, F. Ahmed, Z. Liu, C. Liu, M. Zeng, and L. Wang, "Mm-react: Prompting chatgpt for multimodal reasoning and action," _arXiv preprint arXiv:2303.11381_, 2023.
+* [70] Z. Liu, Y. He, W. Wang, W. Wang, Y. Wang, S. Chen, Q. Zhang, Y. Yang, Q. Li, J. Yu _et al._, "Internchat: Solving vision-centric tasks by interacting with chatbots beyond language," _arXiv preprint arXiv:2305.05662_, 2023.
+* [71] Y. Ge, W. Hua, J. Ji, J. Tan, S. Xu, and Y. Zhang, "Openagi: When llm meets domain experts," _arXiv preprint arXiv:2304.04370_, 2023.
+* [72] Y. Shen, K. Song, X. Tan, D. Li, W. Lu, and Y. Zhuang, "Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface," _arXiv preprint arXiv:2303.17580_, 2023.
+* [73] D. Suris, S. Menon, and C. Vondrick, "Vipergpt: Visual inference via python execution for reasoning," _arXiv preprint arXiv:2303.08128_, 2023.
+* [74] C. Wu, S. Yin, W. Qi, X. Wang, Z. Tang, and N. Duan, "Visual chatgpt: Talking, drawing and editing with visual foundation models," _arXiv preprint arXiv:2303.04671_, 2023.
+* [75] T. Gupta and A. Kembhavi, "Visual programming: Compositional visual reasoning without training," in _Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition_, 2023, pp. 14 953-14 962.
+* [76] L. Chen, B. Li, S. Shen, J. Yang, C. Li, K. Keutzer, T. Darrell, and Z. Liu, "Language models are visual reasoning coordinators," in _ICLR 2023 Workshop on Mathematical and Empirical Understanding of Foundation Models_, 2023.
+* [77] P. Lu, B. Peng, H. Cheng, M. Galley, K.-W. Chang, Y. N. Wu, S.-C. Zhu, and J. Gao, "Chameleon: Plug-and-play compositional reasoning with large language models," _arXiv preprint arXiv:2304.09842_, 2023.
+* [78] T. Schick, J. Dwivedi-Yu, R. Dessi, R. Raileanu, M. Lomeli, L. Zettlemoyer, N. Cancedda, and T. Scialom, "Toolformer: Language models can teach themselves to use tools," _arXiv preprint arXiv:2302.04761_, 2023.
+* [79] Z. Gou, Z. Shao, Y. Gong, Y. Shen, Y. Yang, N. Duan, and W. Chen, "Critic: Large language models can self-correct with tool-interactive critiquing," _arXiv preprint arXiv:2305.11738_, 2023.
+* [80] Y. Liang, C. Wu, T. Song, W. Wu, Y. Xia, Y. Liu, Y. Ou, S. Lu, L. Ji, S. Mao _et al._, "Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis," _arXiv preprint arXiv:2303.16434_, 2023.
+* [81] S. Hao, T. Liu, Z. Wang, and Z. Hu, "Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings," _arXiv preprint arXiv:2305.11554_, 2023.
+* [82] B. Paranjape, S. Lundberg, S. Singh, H. Hajishirzi, L. Zettlemoyer, and M. T. Ribeiro, "Art: Automatic multi-step reasoning and tool-use for large language models," _arXiv preprint arXiv:2303.09014_, 2023.
+* [83] G. Kim, P. Baldi, and S. McAleer, "Language models can solve computer tasks," _arXiv preprint arXiv:2303.17491_, 2023.
+* [84] T. Cai, X. Wang, T. Ma, X. Chen, and D. Zhou, "Large language models as tool makers," _arXiv preprint arXiv:2305.17126_, 2023.
+* [85] R. H. Lewis and J. Jiao, "Computegpt: A computational chat model for numerical problems," _arXiv preprint arXiv:2305.06223_, 2023.
+
+* [86] L. Gao, A. Madaan, S. Zhou, U. Alon, P. Liu, Y. Yang, J. Callan, and G. Neubig, "Pal: Program-aided language models," in _International Conference on Machine Learning_. PMLR, 2023, pp. 10 764-10 799.
+* [87] G. Wang, Y. Xie, Y. Jiang, A. Mandlekar, C. Xiao, Y. Zhu, L. Fan, and A. Anandkumar, "Voyager: An open-ended embodied agent with large language models," _arXiv preprint arXiv:2305.16291_, 2023.
+* [88] C. Qian, C. Han, Y. R. Fung, Y. Qin, Z. Liu, and H. Ji, "Creator: Disentangling abstract and concrete reasonings of large language models through tool creation," _arXiv preprint arXiv:2305.14318_, 2023.
+* [89] Y. Cai, S. Mao, W. Wu, Z. Wang, Y. Liang, T. Ge, C. Wu, W. You, T. Song, Y. Xia _et al._, "Low-code llm: Visual programming over llms," _arXiv preprint arXiv:2304.08103_, 2023.
+* [90] S. Arora, B. Yang, S. Eyuboglu, A. Narayan, A. Hojel, I. Trummer, and C. Re, "Language models enable simple systems for generating structured views of heterogeneous data lakes," _arXiv preprint arXiv:2304.09433_, 2023.
+* [91] W. Zhang, Y. Shen, W. Lu, and Y. Zhuang, "Data-copilot: Bridging billions of data and humans with autonomous workflow," _arXiv preprint arXiv:2306.07209_, 2023.
+
+[MISSING_PAGE_FAIL:23]
+
+of two tables in the SQL database in Table 20, and 21 and list several examples in Table 22. For verifying the planning ability of the LLM-based AI agents, we select this type of query.
+
+\begin{table}
+\begin{tabular}{l l} \hline \hline \multicolumn{2}{c}{**Journal**} \\ \hline
+**Column Name** & **Type** \\ \hline Name & TEXT \\ First\_Issue\_Date & TIME \\ Journal\_ID & INTEGER \\ Category & TEXT \\ Sponsor\_Organization & TEXT \\ Country & TEXT \\ s Language & TEXT \\ Publication\_Count & INTEGER \\ \hline \hline \end{tabular} 
+\begin{tabular}{l l} \hline \multicolumn{2}{c}{**RecordCompanies**} \\ \hline
+**Column Name** & **Type** \\ \hline Person\_ID & INTEGER \\ Journal\_ID & INTEGER \\ Count & INTEGER \\ \hline \hline \end{tabular}
+\end{table}
+Table 21: Schema of the CoverPersonality table
+
+\begin{table}
+\begin{tabular}{l l l l} \hline \hline \multicolumn{2}{c}{**Number**} & \multicolumn{1}{c}{**UserPersonality**} \\ \hline
+**Column Name** & **Type** \\ \hline
+**Column Name** & **Type** \\ \hline Person\_ID & INTEGER \\ Journal\_ID & INTEGER \\ Count & INTEGER \\ \hline \hline \end{tabular}
+\end{table}
+Table 20: Schema of the Journal table
+
+## Appendix B Prompts Design
+
+You are a strategy model. Given a problem and a set of tools, you need to generate a sequence of tools to determine the solution to the problem.
+
+Each tool in the toolset is defined as follows:
+
+SQL Generator: Given an input problem and a database, it creates a syntactically correct SQLite query statement.
+
+Python Generator: Given an input problem and some information, it generates a syntactically correct Python code snippet.
+
+Please use the following format:
+
+Question: This is the original question.
+
+Error: This is the previously generated error output.
+
+Tool: These are the tools to be selected and the order in which they are called. Please note to generate a Tool different from the Error.
+
+Result: The final result output by the tool.
+
+Here are some examples of mapping problems to tools:
+
+Question: What is the square of the number of albums by Jolin Tsai?
+
+Error: None
+
+Tool: ["SQL Generator", "Python Generator"]
+
+Result: 100
+
+Question: First, calculate the square of 40, denoted as A, and then find  the names of all the singers whose total number of fans is less than A.
+
+Error: None
+
+Tool: ["Python Generator", "SQL Generator"]
+
+Result: ['Jolin Tsai']
+
+Let's get started:
+
+Question: {question}
+
+Error: {error}
+
+Tool:
+
+Figure 7: The evaluation prompt for tool order planning.
+
+[MISSING_PAGE_EMPTY:27]
+
+* You are a strategy model. Given a problem and a set of tools, you need to generate a sequence of tools to determine the solution to the problem.
+
+Each tool in the toolset is defined as follows:
+
+SQL Generator: Given an input problem and a database, it creates a syntactically correct SQLite query statement.
+
+Python Generator: Given an input problem and some information, it generates a syntactically correct Python code snippet.
+
+Please use the following format:
+
+Question: This is the original question
+
+Error: This is the previously generated error output
+
+Tasks: This is a list in Python. Each item in the list is a dictionary. The
+
+* key of the dictionary represents the selected Tool, and the value is
+
+* the Query when calling the tool. Please note to generate a Tool and
+
+Query different from the Error.
+
+Answer: The final answer
+
+Here are some examples of mapping problems to tools:
+
+Question: What is the square of the number of albums by Jolin Tsai?
+
+Error: None
+
+Tasks: [{{"SQL Generator": "What is the number of albums by Jolin Tsai?"}},
+
+* {{"Python Generator": "What is the square of the number of albums by
+
+Jolin Tsai?"}}]
+
+Answer: The square of the number of albums by Jolin Tsai is 100
+
+Question: First, calculate the square of 40, denoted as A, and then find
+
+* the names of all the singers whose total number of fans is less than A.
+
+Error: None
+
+Tasks: [{{"Python Generator": "A is the square of 40, what is the value of
+
+A?"}}, {{"SQL Generator": "What are the names of all the singers whose
+
+total number of fans is less than A?"}}]
+
+Answer: Jolin Tsai
+
+You must note that: The generated Tasks must strictly meet the format
+
+* requirements: it must be a list in Python, each item in the list is a
+
+* dictionary, the key of the dictionary represents the selected Tool, and
+
+* the value is the Query when calling the tool.
+
+Let's get started:
+
+Question: {question}
+
+Error: {error}
+
+Tasks: ""
+
+Figure 9: The evaluation prompt for one-step tool-subtask pair planning.
+
+[MISSING_PAGE_EMPTY:29]
+
+* [leftmargin=*]
+* the next tool to be called and the corresponding subtask.
+* correct SQLite query statement. PythonREPL: Given an input question and some information, it generates a segment of
+- syntactically correct Python code.
+* Please use the following format:
+* means there are no historical information currently * Tool_Query: This is a dictionary in Python, where the key represents the chosen
+- Tool, and the value is the query input when invoking the Tool. Result: This is the output result of the current Tool_Query Tool... History: This is the history of all previously generated sub-problems * Tool_Query: 'None' signifies that the Final_Answer can be derived Result: 'None' signifies that the Final_Answer can be derived Final_Answer: This is the final answer; when the history is sufficient to reason out
+- the answer, provide the Final_Answer directly In the above format,... signifies that (History/Tool_Query/Result) can be repeated
+- N times. When you can get the Final_Answer, you can generate an empty Tool_Query and Result,
+- and provide the Final_Answer Please stop after generating the Result line or the Final_Answer line.
+* whose total fan count is less than A. History:
+* square of 40, what is the value of A"}, Result:1600 Tool_Query:{("SQL Generator": "Find the names of all singers whose total fan count
+- is less than A"}) Result: Jolin Tsai
+* square of 40, what is the value of A"}, Result: 1600 The Tool_Query for the second tool execution was: {{"SQL Generator": "Find
+- the names of all singers whose total fan count is less than A"}}, Result: Jolin Tsai Tool_Query:None Result:None Final_Answer: Jolin Tsai
+* and only one Tool_Query can be generated each time. Do not perform additional
+- problem analysis, strictly adhere to the format of the problem, and generate
+- output similar to the examples.
+* Now let's get started: Question: {question} History: {history} Tool_Query:
+
+Figure 11: The prompt for the tool-subtask pair generation with TPTU-SA.
+
+[MISSING_PAGE_EMPTY:31]
+
+* [leftmargin=*]
+* You are an SQL expert. Given an input question, you need to create a
+* syntactically correct SQL query statement. Please only use the
+* following datasets, which include four table names: GoldenMelodyAward,
+* Singers, AwardNominee, Singers, and RecordCompanies. The column names
+* and types of each table can be obtained from the create commands in the
+* table below:
+
+CREATE TABLE GoldenMelodyAward (\n\t Nominated\_Count INTEGER, \n\t
+* Competing\_Count INTEGER, \n\t Awards\_Count INTEGER, \n\t Award\_Name
+* TEXT, \n\t Host TEXT, \n\t Year TIME \n\n\n
+* CREATE TABLE AwardNominees (\n\t Singer_ID INTEGER, \n\t Nominated\_Work
+* TEXT, \n\t Award\_Name TEXT, \n\t Award_Edition_ID INTEGER \n\n\n
+* CREATE TABLE Singers(\n\t Name TEXT, \n\t Song\_Count INTEGER, \n\t
+* Album\_Count INTEGER, \n\t Fan\_Count INTEGER, \n\t Singer\_ID INTEGER,
+* \n\t Gender TEXT \n\n\n\n
+* CREATE TABLE RecordCompanies (\n\t Record\_Company TEXT, \n\t Singer\_Date
+* TIME, \n\t Singer_ID INTEGER \n\n\n\n
+
+You can query one or more tables at the same time. Be careful not to query
+* non-existent table names or column names. Also, please note which
+* column is in which table.
+
+Please use the following format when answering:
+
+Question: This is the question
+
+Answer: The SQL query statement to be executed
+
+Figure 13: The evaluation prompt for complex nested SQL questions.
+
+[MISSING_PAGE_EMPTY:33]
+
+[MISSING_PAGE_EMPTY:34]
+
+* You are a strategy model and given a problem and a set of tools, you need \(\leadsto\) to generate a sequence of executable tools to determine the solution to \(\leadsto\) the problem.
+
+Each tool in the toolset is defined as follows:
+
+SQL Generator: Given an input problem and a database, create a
+
+\(\leadsto\) syntactically correct SQLite query statement.
+
+PythonREPL: Given an input problem and some information, generate a
+
+\(\leadsto\) syntactically correct Python code.
+
+Please use the following format:
+
+Question: Here is the question
+
+Error: Here is the previously generated error output
+
+Tasks: Here is a Python List type, where each item in the List is a
+
+\(\leadsto\) dictionary. The key of the dictionary represents the selected tool, and
+
+\(\leadsto\) the value is the query input when calling the tool. Please note that
+
+\(\leadsto\) the generated Tool and Query should be different from those in the
+
+\(\leadsto\) Error.
+
+Answer: The final answer
+
+Here are some examples mapping the question to the tools:
+
+Question: What is the square of the number of albums by Jolin Tsai?
+
+Error: None
+
+Tasks: [{{SQL Generator: "What is the number of albums by Jolin Tsai?"}},
+
+\(\leadsto\) {{PythonREPL: "What is the square of the number of albums by Jolin
+
+\(\leadsto\) Tsai?"}}]
+
+Answer: The square of the number of albums by Jolin Tsai is 100
+
+Question: First, calculate the square of 40 and denote it as A. Then, find
+
+\(\leadsto\) the names of all artists with a total number of fans less than A.
+
+Error: None
+
+Tasks: [{{PythonREPL: "Let A be the square of 40. What is the value of
+
+A?"}}, {{SQL Generator: "Find the names of all artists with a total
+
+\(\leadsto\) number of fans less than A"}}]
+
+Answer: Jolin Tsai
+
+Note that you must ensure that the generated Tasks strictly adhere to the
+
+\(\leadsto\) format requirements: they must be in Python List type, where each item
+
+\(\leadsto\) is a dictionary. The key of the dictionary represents the selected tool,
+
+and the value is the query input when calling the tool.
+
+Now, let's proceed:
+
+Question: {question}
+
+Error: {error}
+
+Tasks:
+
+Figure 16: The system prompt for one-step agent.
+
+[MISSING_PAGE_EMPTY:36]

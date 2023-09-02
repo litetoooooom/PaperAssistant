@@ -1,0 +1,762 @@
+# TPTU: Task Planning and Tool Usage of
+
+Large Language Model-based AI Agents
+Jingqing Ruan\({}^{\dagger}\)
+ruanjingqing@sensetime.com
+&Yihong Chen\({}^{\dagger}\)
+chenyihong@sensetime.com
+&Bin Zhang\({}^{\dagger}\)
+zhangbin11@sensetime.com
+&Zhiwei Xu\({}^{\dagger}\)
+xuzhiwei@sensetime.com
+&Tianpeng Bao\({}^{\dagger}\)
+baotianpeng@sensetime.com
+&Guoqing Du\({}^{\dagger}\)
+dguoqing@sensetime.com
+&Shiwei Shi\({}^{\dagger}\)
+shishiwei@sensetime.com
+&Hangyu Mao\({}^{\dagger}\)1
+maohangyu@sensetime.com
+&Xingyu Zeng
+zengxingyu@sensetime.com
+&Rui Zhao
+zhaorui@sensetime.com
+&SenseTime Research, China
+These authors contribute equally to this work.These authors work as research interns at SenseTime Research.The corresponding author.
+
+
+translate: 基于大型语言模型的人工智能代理Jingqing Ruan\({}^{\dagger}\) ruanjingqing@sensetime.com &Yihong Chen\({}^{\dagger}\) chenyihong@sensetime.com &Bin Zhang\({}^{\dagger}\) zhangbin11@sensetime.com &Zhiwei Xu\({}^{\dagger}\) xuzhiwei@sensetime.com &Tianpeng Bao\({}^{\dagger}\) Duotian@sensSense.com &G\({{}^{\dagger}) baoqguing@yuyuyuyu.com &Shiyuyuyu &These作者与中国研究研究中心的作者共同贡献了这项研究工作.
+
+summary: 这段话是关于一篇论文的作者名单。在这篇文章中，有十位来自SenseTime Research的研究实习生共同参与了研究工作。他们的电子邮件地址分别是：ruanjingqing@sensetime.com、chenyihong@sensetime.com、zhangbin11@sensetime.com、xuzhiwei@sensetime.com、baotianpeng@sensetime.com、dguoqing@sensetime.com、shiwei@sensetime.com、maohangyu@sensetime.com、zengxingyu@sensetime.com和zhaorui@sensetime.com。他们的工作单位是SenseTime Research(中国)。这篇论文的主要作者是这些人的负责人。
+###### Abstract
+
+With recent advancements in natural language processing, Large Language Models (LLMs) have emerged as powerful tools for various real-world applications. Despite their prowess, the intrinsic generative abilities of LLMs may prove insufficient for handling complex tasks which necessitate a combination of task planning and the usage of external tools. In this paper, we first propose a structured framework tailored for LLM-based AI Agents and discuss the crucial capabilities necessary for tackling intricate problems. Within this framework, we design two distinct types of agents (i.e., one-step agent and sequential agent) to execute the inference process. Subsequently, we instantiate the framework using various LLMs and evaluate their Task Planning and Tool Usage (TPTU) abilities on typical tasks. By highlighting key findings and challenges, our goal is to provide a helpful resource for researchers and practitioners to leverage the power of LLMs in their AI applications. Our study emphasizes the substantial potential of these models, while also identifying areas that need more investigation and improvement.
+
+translate: 随着自然语言处理的近期进步,大型语言模型 (LLM) 已经成为各种现实应用的强大工具.尽管它们具有实力,但LLM的内在生成能力可能不足以处理复杂的任务,需要任务规划和使用外部工具的组合.在本文中,我们首先提出了针对基于LLM的人工智能代理的结构化框架,并讨论解决复杂问题的关键能力.在这个框架内,我们设计了两种不同的代理类型 (即一步代理和顺序代理)来执行推理过程.随后,我们使用各种LLM将框架实例化,并评估它们在典型任务上的任务规划和利用工具 (TUTP) 能力.
+
+summary: 随着自然语言处理技术的最新进展，大型语言模型(LLM)已经成为各种现实世界应用的强大工具。尽管它们具有很强的能力，但LLM固有的生成能力可能不足以应对需要结合任务规划和外部工具的复杂任务。在这篇论文中，我们首先提出了一种针对基于LLM的AI代理的结构化框架，并讨论了解决复杂问题所需的关键能力。在这个框架中，我们设计了两种类型的代理(即一步代理和序列代理)来执行推理过程。然后，我们使用不同的LLM来实现这个框架，并在典型任务上评估它们的任务规划和工具使用(TPTU)能力。通过强调关键发现和挑战，我们的目标是为研究人员和实践者提供一个有用的资源，以便在他们的AI应用中利用LLM的力量。我们的研究强调了这些模型的巨大潜力，同时也指出了需要更多调查和改进的领域。
+
+## 1 Introduction
+
+Large Language Model (LLM) [1] is a recent breakthrough in natural language processing (NLP) research. These models are trained on massive amounts of text data and can solve a wide range of tasks, even those that were not included in their training dataset. This ability is especially evident in few-shot [2] and zero-shot [3] learning, where LLMs can perform well with minimal or no task-specific training.
+
+translate: 大型语言模型 (LLM) [1] 是自然语言处理 (NLP) 研究的近期突破.这些模型在大量文本数据上进行训练,并可以解决广泛的任务,甚至包括在训练数据集中不包括的任务.这种能力在少数射击[2] 和零射击[3] 学习中尤为明显,LLM可以在最少或没有特定任务的训练下表现良好.
+
+summary: 近年来，大型语言模型(LLM)在自然语言处理(NLP)领域取得了重大突破。这些模型通过大量文本数据进行训练，能够完成各种任务，即使这些任务不在它们的训练数据集内。这种能力在少量学习(few-shot)和零样本学习(zero-shot)中尤为明显，即大型语言模型可以在极少或无需特定任务培训的情况下表现良好。
+However, the application of LLMs in real-world settings presents unique challenges. On the one hand, LLMs are proved to be poor at solving logic problems such as mathematics, and their training data is also out of date. Teaching LLMs to use tools such as calculators or search engines can help prevent them from hallucinating. On the other hand, despite their impressive problem-solving abilities, the successful integration of these models into complex systems often requires more than just task understanding - it necessitates the capacity to manipulate various tools and interact effectively with users. This is exemplified in systems like AutoGPT 1, BabyAGI 2, and ChatGPT-plugins 3, which leverage LLMs' capabilities beyond merely generating well-written texts and programs. In these systems, LLMs operate as the central controller, manipulating different tools and interacting with humans, thus taking on the role of Artificial Intelligence Agents (AI Agents). In addition to being central planners, LLMs are often used as intermediaries between macro plans and low-level tool calls, or as specific tools. As such, LLMs are seen as a crucial approximation of the linguistic world model in real-world systems.
+
+translate: 然而,在现实环境中应用LLMs带来了独特的挑战 ⁇ 一方面,LLMs在解决逻辑问题(如数学)方面表现不佳,他们的培训数据也过时 ⁇ 教LLMs使用计算器或搜索引擎等工具可以防止他们产生幻觉 ⁇ 另一方面,尽管他们具有令人印象深刻的解决问题能力,但成功地将这些模型整合到复杂系统中往往需要不仅仅是任务理解 - - 它需要有能力操纵各种工具并与用户有效地互动 ⁇ 这在AutoGPT 1,BabyAGI 2,和ChatGPT-plugins 3等系统中得到了体现,这些系统利用LLMs的能力不仅仅是生成书面文本和程序 ⁇ 在这些系统中,LLMs作为中央控制器,操纵不同的工具并与人类互动,从而发挥人工智能(AI)的关键作用 ⁇ 
+
+summary: 然而，在现实世界中应用大型语言模型(LLM)面临着独特的挑战。一方面，LLM在解决逻辑问题如数学方面表现不佳，且它们的训练数据也过时了。通过教导LLM使用诸如计算器或搜索引擎等工具，可以帮助防止它们产生幻觉。另一方面，尽管这些模型在解决问题方面表现出色，但将它们成功整合到复杂系统中通常需要不止任务理解能力——还需要处理各种工具并与用户有效互动的能力。这在像AutoGPT 1、BabyAGI 2和ChatGPT-plugins 3这样的系统中得到了体现，这些系统利用了LLM在生成高质量文本和程序之外的能力。在这些系统中，LLM扮演着中心控制器的角色，操控不同的工具并与人类互动，从而成为人工智能代理(AI Agent)。除了作为宏观计划的核心制定者外，LLM还常被用作宏观计划与低级工具调用之间的中介，或者作为特定工具。因此，LLM被视为现实世界系统中语言世界模型的重要近似。
+Footnote 1: https://github.com/Significant-Gravitas/Auto-GPT
+
+translate: 脚注1:https://github.com/Significant-Gravitas/Auto-GPT
+
+summary: 脚注1：https://github.com/Significant-Gravitas/Auto-GPT
+Footnote 2: https://github.com/yoheinakajima/babyagi
+
+translate: 脚注2:https://github.com/yoheinakajima/babyagi
+
+summary: 第二个脚注：https://github.com/yoheinakajima/babyagi
+Footnote 3: https://openai.com/blog/chatgpt-plugins
+
+translate: 脚注3: https://openai.com/blog/chatgpt-plugins
+
+summary: 第三个脚注：https://openai.com/blog/chatgpt-plugins
+In this paper, we propose a structured framework and discuss the necessary abilities of such LLM-based AI Agents. Furthermore, we instantiate the framework with different LLMs and evaluate their task planning and tool usage (TPTU) abilities on several tasks. Our main contributions are summarized as follows:
+
+translate: 在本文中,我们提出了一个结构化框架,并讨论了基于 LLM 的 AI 代理的必要能力 ⁇ 此外,我们还将框架与不同的 LLM 进行实例化,并评估它们在几个任务上的任务规划和工具使用 (TPTU) 能力 ⁇ 我们的主要贡献概述如下:
+
+summary: 在本文中，我们提出了一种结构化的框架，并讨论了基于LLM的AI代理所需的能力。此外，我们使用不同的LLM来实例化这个框架，并在多个任务上评估它们在任务规划和工具使用(TPTU)方面的能力。我们的主要贡献总结如下：
+1. We propose a structured framework tailored for LLM-based AI Agents to evaluate the TPTU abilities of the existing open-source LLMs.2. We design two distinct types of agents (i.e., one-step agent and sequential agent) to execute the inference process and provide detailed empirical results and analysis.3. Our study reveals significant potential in utilizing LLMs for complex tasks while highlighting areas for further investigation and improvement.
+
+translate: 我们提出了一个针对基于 LLM 的 AI 代理的结构化框架,以评估现有开源 LLM 的 TPTU 能力.我们设计了两种不同的代理类型 (即,单步代理和顺序代理)来执行推断过程,并提供详细的经验结果和分析.我们的研究揭示了 LLM 用于复杂任务的巨大潜力,同时突出了需要进一步研究和改进的领域.
+
+summary: 我们提出了一种针对基于LLM的AI代理的结构化框架，以评估现有的开源LLM在TPTU方面的能力。我们设计了两种不同的代理类型(即一步代理和序列代理)来执行推理过程，并提供了详细的实证结果和分析。我们的研究揭示了利用LLM进行复杂任务的巨大潜力，同时强调了需要进一步研究和改进的领域。
+
+## 2 Method
+
+To the best of our knowledge, the study of "Agent", "Autonomous Agent", "AI Agent" and "Multi-Agent" has been a central part of AI research for decades [4; 5; 6; 7; 8; 9], aimed at understanding and building intelligent and autonomous systems, but there is currently no standardized definition for AI Agents, particularly those that are based on LLMs.
+**In this paper, the Artificial Intelligence Agent (AI Agent) is defined as a program that employs artificial intelligence techniques to perform tasks that typically require human-like intelligence**. AI Agents can take many forms, from simple chatbots to complex autonomous systems that interact with their environment and make decisions in real time. They can be trained using a variety of machine learning techniques, including supervised, unsupervised, and reinforcement learning, and can be programmed to perform specific tasks or learn from their experiences in order to improve their performance over time.
+
+
+translate: 据我们所知,研究"代理人", "自主代理人", "人工智能代理人"和"多代理人"几十年来一直是人工智能研究的核心部分 [4; 5; 6; 7; 8; 9],旨在理解和构建智能和自主系统,但目前没有人工智能代理人的标准化定义,特别是那些基于 LLM 的代理人. **在本文中,人工智能代理人 (AI Agent) 被定义为使用人工智能技术来执行通常需要人类智能的任务的程序**.人工智能代理人可以采取多种形式,从简单的聊天机器人到复杂的自主系统,与他们的环境互动并实时做出决策.
+
+summary: 这段话主要讨论了关于“代理”、“自主代理”、“AI代理”和“多智能体”的研究在人工智能领域的重要性，这些研究旨在理解和构建智能自主系统。然而，目前尚无针对基于预训练语言模型的AI代理的标准定义。在这篇论文中，将人工智能代理(AI Agent)定义为使用人工智能技术执行通常需要人类智能的任务的程序。AI代理可以采取多种形式，从简单的聊天机器人到复杂的自主系统，它们能够实时与环境互动并做出决策。它们可以通过监督学习、无监督学习和强化学习等多种机器学习技术进行训练，也可以根据经验进行编程以提高其性能。
+### Agent Framework
+
+We are particularly interested in the AI Agent that employs the LLM techniques (i.e., LLM-based AI Agent), due to its high efficiency and flexibility in various tasks and domains. Specifically, we design our AI Agent framework with six components as shown in Figure 1:
+
+translate: 我们特别感兴趣的是使用 LLM 技术 (即基于 LLM 的 AI 代理) 的 AI 代理,因为它在各种任务和领域具有高效率和灵活性. 具体来说,我们设计了我们的 AI 代理框架,有六个组件,如图 1 所示:
+
+summary: 我们特别关注使用LLM技术(即基于LLM的AI代理)的AI代理，因为它在各种任务和领域中具有很高的效率和灵活性。具体来说，我们在我们的AI代理框架中设计了六个组件，如图1所示：
+1. **Task Instruction**. This is the explicit input of the agent. In practical systems, the task instruction comes from human users of the systems. For example, in an HR system, the user may give a task instruction: How much budget is required to provide a 1005 incentive for each colleague who has worked for five years? In contrast, in a criminal investigation system, the user may give a task instruction: Deploy surveillance on a group of suspects.2. **Designed Prompt**. This is an additional form of input for the agent, derived from tasks that the human users anticipate the AI Agent will complete. Humans can craft specific instructions or demonstrations to steer the LLM-based AI Agents toward generating suitable
+
+translate: 例如,在人力资源系统中,用户可以给出一个任务指令:为每个工作了五年的同事提供1005奖励需要多少预算? 相比之下,在刑事调查系统中,用户可以给出一个任务指令:对一组嫌疑人进行监视.2. **设计提示**. 这是为代理提供额外的输入形式,来自人类用户预期人工智能代理将完成的任务. 人类可以制作特定指令或演示来引导基于LLM的人工智能代理生成合适的
+
+summary: 这段话主要介绍了两个与AI代理相关的概念：任务指示和设计提示。
+
+1. 任务指示是AI代理的明确输入，通常来自系统的人类用户。例如，在人力资源系统中，用户可能会给出一个任务指示：为每个工作五年的同事提供1005元的激励，需要多少预算？而在刑事调查系统中，用户可能会给出另一个任务指示：部署监控对一组嫌疑人进行监视。
+
+2. 设计提示是一种额外的输入形式，它来自于人类用户预期的AI代理将完成的任务。人类可以通过创建特定的指令或演示来引导基于LLM的AI代理生成合适的输出。
+[MISSING_PAGE_FAIL:3]
+
+translate: [缺失页面错误:3]
+
+summary: 抱歉，由于技术限制，无法为您提供所需的页面内容。请尝试重新请求或访问其他相关页面。如有任何疑问，请随时联系我们。谢谢！
+API to fetch current weather information, or a Python interpreter to solve the mathematical question.4. **LLM**. This is the core component of the system that interprets the task instructions and prompts, interacts with the toolset, and generates the intermediate outputs and final answers. In this context, we utilize publicly available large language models such as ChatGPT, GPT-4, and others.5. **Intermediate Output**. This represents the output generated by the LLM-based AI Agent after it processes the task instructions and prompts, and interacts with the toolset. There are three typical intermediate outputs: (1) the high-level plans to fulfill the original user instruction, (2) selected and created tools to fulfill each subtask in the plans, and (3) the results or errors produced after tool execution. The output can be reviewed and refined, either by the AI Agent itself or with human oversight, to ensure it is accurate and meets the requirements of the task instruction.6. **Final Answer**. This is the output that the AI Agent summarizes and provides to the user after all processing (including task planning, tool usage, and possibly error feedback) has been completed.
+
+translate: 这代表了基于 LLM 的 AI 代理处理任务指令和提示后与工具集互动的输出.有三个典型的中间输出: (1) 执行原始用户指令的高级计划, (2) 执行计划中的每个子任务的选定和创建的工具, (3) 执行后产生的结果或错误. 工具可以通过人工智能执行或与人类监督进行审查和改进,以确保它符合任务指令的要求. ** AIFF 6. 这个答案总结了人工智能代理的输出,并向用户提供所有用户提供的反馈(包括最终处理,规划和使用)
+
+summary: 这段话主要介绍了AI系统中的几个关键组件。首先是通过API获取当前天气信息，或者使用Python解释器解决数学问题。接下来是核心组件LLM(Language Model for Interaction)，它负责解释任务指令、与工具集互动并生成中间输出和最终答案。在这个场景中，我们使用了诸如ChatGPT、GPT-4等公开的大型语言模型。然后是中间输出，这是基于LLM的AI代理在处理任务指令和提示后生成的输出。中间输出通常包括以下三个部分：1)完成原始用户指令的高层次计划;2)用于实现每个子任务的选定和创建的工具;3)执行工具后的结果或错误。这些输出可以通过AI代理自身或在人类监督下进行审查和修改，以确保其准确性和满足任务指令的要求。最后是最终答案，这是AI代理在所有处理过程(包括任务规划、工具使用以及可能的错误反馈)完成后向用户提供的输出摘要。
+
+### Agent Ability
+
+To apply LLM-based AI Agents to augment or replace human decision-making in real-world applications, the agents typically require the following abilities:
+
+translate: 为了应用基于LLM的人工智能代理来增强或取代人类在现实世界中的决策,代理通常需要以下能力:
+
+summary: 要将基于LLM的AI代理应用于增强或替代现实世界中的人类决策，这些代理通常需要具备以下能力：
+1. **Perception Ability**: AI Agents must be able to perceive the task instruction from human and system specifications.2. **Task Planning Ability**: AI Agents should have the capacity to create a step-by-step plan for complex task composition based on the perceived instruction and specifications. This usually involves the generation of critical subtask sequences, and the ability to adjust the plan dynamically in response to changes in the task or environment.3. **Tool Usage Ability**: On the one hand, AI Agents should possess the capacity to **select** a variety of existing tools or resources to execute complex tasks. On the other hand, AI Agents should **create** new tools by converting the task requirements. This ability enables the AI Agent to extend its capabilities beyond LLM itself and the existing tools, by leveraging the vast resources available in the digital world. Finally, AI Agents should have the ability to **execute** the selected or created tools for truly grounding the human request based on the resources and constraints of systems.4. **Learning/Reflection/Memory (from Feedback)**: AI Agents should be capable of learning from feedback, including correct results and exception errors. They should incorporate memory, such as logging or chat history, and reflection to adapt their plans or decisions. This allows the agents to continuously improve their performance and efficiency in task execution.5. **Summarization**: After several rounds of interaction with humans, tools, and systems, AI agents can ultimately complete the original task provided by the users. At this point, AI agents should be able to summarize the interaction history and provide a final answer that is concise and easy to understand for the users.
+
+translate: 1. **感知能力**:人工智能代理必须能够从人类和系统规格中感知任务指令.2. **任务规划能力**:一方面,人工智能代理应该有能力 **选择**各种现有工具或资源来执行复杂任务.另一方面,人工智能代理应该 **通过转换任务要求来创建新的工具. 这种能力使人工智能代理能够通过利用世界上可用的庞大的数字资源,扩展其能力,超越自身和现有工具. 最后,人工智能代理应该有能力为人工智能系统和人工智能系统所要求的人力资源进行选择或工具的总结. ** 工具使用能力**: ** 4. ** 基于人工智能代理应该有能力 ** 记录 / 框架的限制. ** 基于人工智能代理应该能够不断改进其执行计划,包括互动历史,回馈和反思等. ** 机器智能代理应该能够不断改进其性能.
+
+summary: 人工智能代理的五大能力：
+
+1. **感知能力**：AI 代理必须能够从人类和系统规格中理解任务指示。
+2. **任务规划能力**：AI 代理应具备根据感知到的指令和规格，为复杂任务创建分步计划的能力。这通常涉及生成关键子任务序列，并能够根据任务或环境的变化动态调整计划。
+3. **工具使用能力**：一方面，AI 代理应具有选择各种现有工具或资源执行复杂任务的能力。另一方面，AI 代理应能够通过将任务需求转换为新工具来创造新工具。这种能力使 AI 代理能够利用数字世界中的丰富资源，超越 LLM 本身和现有的工具，以实现更广泛的功能。最后，AI 代理应具有根据系统的资源和约束执行所选或创建的工具的能力，真正满足用户的需求。
+4. **学习、反思和记忆(来自反馈)**：AI 代理应能从反馈中学习，包括正确结果和异常错误。它们应该将记忆(如日志或聊天历史)和反思纳入计划或决策过程，以便不断改进在任务执行中的性能和效率。
+5. **概括**：经过与人类、工具和系统的几轮互动后，AI 代理最终可以完成用户提供的原始任务。在这个阶段，AI 代理应能够概括交互历史，并为用户提供简洁易懂的最终答案。
+To endow AI Agents with the aforementioned abilities, some techniques that can be used include chain-of-thought (CoT) and vector databases, as shown in Table 1.
+
+translate: 为了赋予人工智能特工上述能力,可以使用的一些技术包括思想链(CoT)和矢量数据库,如表1所示.
+
+summary: 要赋予AI代理上述能力，可以使用一些技术，如思维链(CoT)和向量数据库，如表1所示。
+
+### Agent Design
+
+Task planning and tool usage represent the cornerstone of LLM's abilities. Others like perception, learning/reflection/memory (from feedback), and summarization are indeed critical, but they primarily serve to enhance and support these two core competencies. Therefore, concentrating on these two key competencies - **T**ask **P**lanning and **T**ool **U**sage (TPTU for short) - we have devised two distinct types of AI agents, as depicted in Figure 2:
+
+translate: 任务规划和工具使用是LLM能力的基石. 其他如感知,学习/反思/记忆(从反馈中),和总结确实至关重要,但它们主要用于增强和支持这两种核心能力. 因此,专注于这些两种关键能力 - - **T**ask **P**lanning和 **T**ool **U**sage (简称TPTU) - - 我们设计了两种不同的AI代理,如图2所示:
+
+summary: 任务规划和工具使用是LLM能力的基础。其他方面，如感知、学习/反思/记忆(从反馈中)以及摘要化，虽然也很重要，但它们主要用于增强和支持这两个核心技能。因此，我们专注于这两个关键能力——任务规划和工具使用(简称为TPTU)，并设计了两种不同的AI代理类型，如图2所示：
+* The first one, named as the **O**ne-step **A**gent (TPTU-OA), adopts a global perspective to interpret the original problem, effectively breaking it down into a sequence of sub-tasks in a single instance. This strategy fully harnesses the model's comprehensive understanding capabilities to map out the problem-solving steps for all sub-tasks at once. This method underscores the significance of a holistic understanding and planning of the overall task, albeit it might lack flexibility when dealing with individual sub-tasks.* The second type, referred to as the **S**equential **A**gent (TPTU-SA), emphasizes tackling the current sub-task at hand. Upon successful resolution of the ongoing sub-task, this agent requests the LLMs to provide the succeeding sub-task. This approach enables the model to maintain a clear and concentrated focus throughout the problem-solving journey, tackling issues incrementally. Such a methodology allows for continuous feedback and progress within the confines of addressing a broader problem.
+
+translate: 这种方法强调了整体任务的整体理解和规划的重要性,尽管在处理单个子任务时可能缺乏灵活性. 第二种类型,称为 **S** **Equential Agent (TPTU-SA),强调处理当前的子任务. 在成功解决正在进行的子任务后,该模型要求后续的 LLM 代理提供子任务. 这种方法使模型能够在整个解决问题的旅程中保持清晰和集中关注,逐步限制问题. 这种方法允许在更广泛的解决方法中不断反馈和解决问题的进展.
+
+summary: 第一种方法，被称为一步代理(TPTU-OA)，采用全局视角来理解原始问题，并在单次实例中有效地将问题分解成一系列子任务。这种策略充分利用了模型的全面理解能力，一次性为所有子任务规划解决步骤。这种方法强调了整体任务的综合理解和规划的重要性，尽管在处理个别子任务时可能缺乏灵活性。第二种类型的方法称为顺序代理(TPTU-SA)，它强调解决当前手头的子任务。在成功解决当前子任务后，该代理请求LLM提供下一个子任务。这种方法使模型能够在整个问题解决过程中保持清晰且专注的焦点，逐步解决问题。这种方法允许在解决更广泛问题的范围内进行连续反馈和进展。
+These two distinct agent models represent two disparate problem-solving strategies - the sequential and one-step resolution 4. In our subsequent experiments, we aim to understand their respective
+
+translate: 这两种不同的代理模型代表了两种不同的解决问题的策略 - - 顺序和一步的解决方法.
+
+summary: 在这段话中，作者介绍了两种不同的代理模型，分别代表了两种不同的解决问题策略：顺序解决和一步解决。在随后的实验中，我们将研究它们各自的特点和优势。
+\begin{table}\begin{tabular}{l l} \hline \hline**Ability** & **Possible Techniques** \\ \hline Perception & Multi-input Fusion \\ Task Planning & Zero-shot CoT and Few-shot CoT \\ Tool Usage & Text Matching/Code Generation/Action Grounding \\ (Selection/Creation/Execution) & \\ Learning/Reflection/Memory & RLHF/Multi-agent Debate/Vector Database \\ Summarization & Attention Mechanism and Natural Language Generation \\ \hline \hline \end{tabular}\end{table}Table 1: A simple illustration of the techniques for endowing the key ability.
+
+translate: \begin{table}\begin{tabular}{l l} \hline \hline**Ability** & **Possible Techniques** \\ \hline Perception & Multi-input Fusion \\ Task Planning & Zero-shot CoT and Few-shot CoT \\ Tool Usage & Text Matching/Code Generation/Action Grounding \\ (Selection/Creation/Execution) & \\ Learning/Reflection/Memory & RLHF/Multi-agent Debate/Vector Database \\ Summaryization & Attention Mechanism and Natural Language \\ Generation \hline \end{tabular}\end{table}表1:赋予关键能力的技术的一个简单说明.
+
+summary: 这段话用中文总结如下：
+
+表1：为关键能力赋予技术的一种简化示例。
+
+| 能力 | 可能的技术 |
+| :---: | :---: |
+| 感知力 | 多输入融合 |
+| 任务规划 | 零样本和少样本的知识迁移 |
+| 工具使用 | 文本匹配、代码生成和动作解码 |
+|(选择、创建和执行)| 学习、反思和记忆 |
+| 学习/反省/记忆 | 强化学习隐函数法、多智能体辩论和向量数据库 |
+| 摘要 | 注意力机制和自然语言生成 |
+Figure 2: The workflows of the One-step Agent and the Sequential Agent are specifically designed to assess the Task Planning and Tool Usage abilities of LLMs.
+
+translate: 图 2: 一步代理和顺序代理的工作流程专门用于评估 LLM 的任务规划和工具使用能力.
+
+summary: 图2展示了One-step Agent和Sequential Agent的工作流程，它们专门设计用于评估大型语言模型(LLM)在任务规划和工具使用方面的能力。
+strengths and weaknesses, and how they can be best utilized to leverage the capabilities of LLMs in real-world problem-solving scenarios.
+
+translate: 优势和弱点,以及如何最好地利用它们来利用法学硕士在现实世界解决问题的场景中的能力.
+
+summary: 本文主要探讨了人工智能语言模型(LLM)的优势和劣势，以及如何最大限度地利用这些优势来解决现实世界中的问题。
+
+## 3 Evaluation
+
+We instantiate the proposed LLM-based AI Agent framework (TPTU-OA and TPTU-SA) with different LLMs and evaluate their performance on typical tasks.
+
+
+translate: 我们用不同的 LLM 实例化基于 LLM 的 AI 代理框架 (TPTU-OA 和 TPTU-SA),并评估它们在典型任务上的表现 ⁇ 
+
+summary: 我们使用不同的预训练语言模型(如GPT-2、Baichuan-13B等)来实例化提出的基于LLM的AI代理框架(TPTU-OA和TPTU-SA)，并评估它们在各种典型任务上的性能。
+### Preparations
+
+Before beginning our evaluation, we first outline the preparations. We will give detailed descriptions of the datasets, available tools, and popular large language models.
+
+
+translate: 在开始评估之前, 我们首先概述准备工作, 我们将详细描述数据集, 可用的工具和流行的大型语言模型.
+
+summary: 在开始评估之前，我们首先列出了准备工作。我们将详细描述数据集、可用工具和流行的大型语言模型。
+#### 3.1.1 Datasets
+
+We first clarify the motivations behind our choice of tools for evaluation. The selection was guided by two primary factors: **the number of tools** to be evaluated and **the specific tools** to be included.
+
+translate: 我们首先要澄清选择评估工具背后的动机:选择主要由两个因素指导: **要评估的工具数量**和 **要包括的特定工具** ⁇ 
+
+summary: 我们首先明确了我们在选择评估工具时的动机。我们的选择主要受到两个主要因素的指导：要评估的工具数量和要纳入的特定工具。
+Firstly, regarding the number of tools, it is important to state that our proposed evaluation framework is extensible. It can incorporate any number of tools as pluggable components to be managed by the LLM-based AI agents. Secondly, looking at the current work on tool-augmented LLMs, such as T-Bench [10] and ToolBench [11], we see that only a handful of tools are launched and executed in a single scenario. Meanwhile, API-Bank [12], in a single scenario, typically dispatches only one API tool and awaits its response. APIBench [13] and ToolApaca [14] do not even execute a tool response. Hence, for the sake of simplicity and focus in our evaluation, we have decided to primarily assess two tools (which can be called multiple times) within a single scenario.
+
+translate: 首先,关于工具的数量,重要的是要说明我们的提议的评估框架是可扩展的. 它可以包含任何数量的工具作为可插入的组件,由基于LLM的AI代理管理. 其次,看看目前对工具增强的LLM的工作,如T-Bench [10]和ToolBench [11],我们看到只有少数工具在单个场景中启动和执行. 与此同时,API-Bank [12],在单个场景中,通常只发送一个API工具并等待其响应. APIBench [13]和ToolApaca [14]甚至不执行工具响应. 因此,为了简单和专注于我们的评估,我们决定在单个场景中主要评估两个工具 (可以被称为多次).
+
+summary: 首先，关于工具的数量，我们需要强调的是，我们的评估框架具有可扩展性。它可以将任意数量的工具作为可插拔组件来管理，这些组件由基于LLM的人工智能代理进行管理。其次，在现有的针对工具增强型LLM的工作中，如T-Bench(第10条引用)和ToolBench(第11条引用)，我们发现仅在一个场景中启动并执行了少数工具。同时，API-Bank(第12条引用)在一个场景中通常只调度一个API工具并在等待其响应后才继续。APIBench(第13条引用)和ToolApaca(第14条引用)甚至不执行任何工具响应。因此，为了简化和集中我们在评估中的关注点，我们决定在一个场景中主要评估两个工具(可以在一次操作中多次调用)。
+Secondly, we also need to decide which specific tools should be used for evaluation. Consider a real-world scenario where we pose the question: "How much budget is required to offer a $100 incentive to each employee who has been with the company for over five years?". To answer this, we first need to retrieve the relevant data from a database, typically using SQL, to find the number of eligible employees. Then, we need to perform a mathematical calculation to estimate the total budget. Such scenarios are quite common in daily life where the formulation and resolution of a question often involve SQL and mathematical tools.
+
+translate: 其次,我们还需要决定应该使用哪些特定工具进行评估. 考虑一个现实世界场景,我们提出一个问题: "向每位在公司工作五年以上的员工提供100美元的奖励需要多少预算?" 为了回答这个问题,我们首先需要从数据库中检索相关数据,通常使用SQL,以找到合格的员工数量. 然后,我们需要进行数学计算来估计总预算. 这种场景在日常生活中很常见,
+
+summary: 其次，我们还需要确定用于评估的具体工具。假设一个现实场景中，我们要问这样一个问题：“为每个在公司工作超过五年的员工提供100美元的激励，需要多少预算？”为了回答这个问题，我们首先需要从数据库中检索相关数据，通常使用SQL，找到符合条件的人员数量。然后，我们需要进行数学计算来估计总预算。这样的情景在日常生活中很常见，问题的表述和解决往往涉及到SQL和数学工具。
+Recognizing the importance of these tools, we have chosen to focus our evaluation on SQL and Python generators, which represent the capabilities of database querying and mathematical computation, respectively. To this end, we have prepared 120 question-answer pairs that vary in complexity. These pairs provide a rigorous assessment of the LLM-based AI agents in understanding, generating, and utilizing these essential tools. For further information on these queries and their corresponding demonstrations, please refer to Appendix A.
+
+translate: 认识到这些工具的重要性,我们选择将我们的评估重点放在SQL和Python生成器上,这些生成器分别代表数据库查询和数学计算的能力.为此,我们准备了120个不同复杂性的问答对.这些对提供了基于LLM的AI代理在理解,生成和利用这些基本工具方面的严格评估.关于这些查询及其相应的演示,请参阅附件A.
+
+summary: 我们认识到这些工具的重要性，因此我们选择专注于SQL和Python生成器，分别代表数据库查询能力和数学计算能力。为此，我们准备了120个问题答案对，它们在复杂性上有所不同。这些问题回答对为基于LLM的AI代理提供了一个严格的评估，以检验它们在理解、生成和利用这些基本工具方面的能力。关于这些查询及其相应的演示的更多信息，请参阅附录A。
+
+#### 3.1.2 Tools
+
+We have defined a total of 12 available tools for the selection of the LLM-based AI agents for evaluation. They are defined as follows:
+
+translate: 我们已经定义了总共 12 个可用的工具来选择基于 LLM 的 AI 代理进行评估 ⁇ 它们定义如下:
+
+summary: 我们已经为选择基于LLM的AI代理进行了总共12种可用工具的选择。它们如下定义：
+* SQL generator: Given an input question and a database, create a syntactically correct SQLite query statement.* Python generator: Given an input question and some information, generate a syntactically correct Python code.* Weather query tool: Given a location, output the current real-time weather at that location.* Image generator: Given a text description, generate a related image.* Text extractor: Given a link to an image, extract the corresponding text and its position coordinates.* Translator: Given a piece of text, translate it into other languages.* Bing Searcher: Given a piece of text, conduct a search on the Bing browser and return content.
+
+translate: * SQL生成器:给出一个输入问题和一个数据库,创建一个语法正确的SQLite查询语句.* Python生成器:给出一个输入问题和一些信息,生成一个语法正确的Python代码.*天气查询工具:给出一个位置,输出当前的实时天气在那个位置.* 图像生成器:给出一个文本描述,生成一个相关的图像.* 文本提取器:给出一个图像的链接,提取相应的文本及其位置坐标.* 翻译器:给出一个文本,将其翻译成其他语言.* Bing搜索器:给出一个文本,在Bing浏览器上进行搜索并返回内容.
+
+summary: 这段话用中文总结如下：
+
+1. SQL生成器：根据输入的问题和数据库，创建一个语法正确的SQLite查询语句。
+2. Python生成器：根据输入的问题和一些信息，生成一个语法正确的Python代码。
+3. 天气查询工具：给出一个地点，输出该地点的实时天气。
+4. 图像生成器：根据文本描述，生成相关联的图像。
+5. 文本提取器：给定一个图片链接，提取相应的文本及其位置坐标。
+6. 翻译器：给定一段文本，将其翻译成其他语言。
+7. Bing搜索器：给定一段文本，在Bing浏览器中进行搜索并返回相关内容。
+* Shell generator: Given an input question and some information, generate a syntactically correct Shell code.* Java generator: Given an input question and some information, generate a syntactically correct Java code.* Wikipedia searcher: Given a piece of text, conduct a search on Wikipedia and return content.* Office software: Given a text description, automatically generate corresponding long documents or spreadsheets or PPTs.* Movie player: Given a movie name, automatically play the corresponding movie resources.
+
+translate: * 贝<unk>生成器:给出一个输入问题和一些信息,生成一个语法正确的贝<unk>代码.* Java生成器:给出一个输入问题和一些信息,生成一个语法正确的Java代码.* 维基百科搜索器:给出一块文本,在维基百科进行搜索并返回内容.* 办公软件:给出文本描述,自动生成相应的长文档或电子表格或PPT.* 电影播放器:给出电影名称,自动播放相应的电影资源.
+
+summary: 这是一个关于不同工具的简要概述。Shell Generator可以根据输入问题和信息生成语法正确的Shell代码;Java Generator可以根据输入问题和信息生成语法正确的Java代码;Wikipedia Searcher可以根据文本进行Wikipedia搜索并返回相关内容;Office软件可以根据文本描述自动生成相应的长文档、电子表格或PPT;Movie Player可以根据电影名称自动播放对应的电影资源。
+
+#### 3.1.3 LLMs
+
+The LLMs evaluated in this paper are listed in Table 2, elaborated as follows:
+
+translate: 本文评估的法学硕士在表2中列出,详述如下:
+
+summary: 在本文中，我们评估了表2中的几种语言模型(LLM)。这些模型如下所述：
+* **GPT** series developed by OpenAI boasts a powerful language model with a vast number of parameters, enabling it to tackle intricate problems efficiently. This paper aims to evaluate the performance of ChatGPT, which balances the performance with costs (the number of OpenAI API calls).* **Claude** is committed to maintaining honesty and ensuring user safety, which is developed by Anthropic. With its impressive size, Claude ranks among the largest language models globally and poses a formidable challenge to ChatGPT as a strong competitor.* **InternLM**, a sophisticated language model developed by Shanghai AI Lab, boasts a multi-round dialogue capability and an impressive ability to comprehend super-long text. This language model is meticulously designed to cater to the nuances of the Chinese language, enabling it to comprehensively understand and effectively process Chinese text. Here, we adopted the version with 120 billion parameters.* **Ziya** is an expansive and robust pre-training model developed by IDEA, derived from the LLaMa with 13 billion parameters. This comprehensive model exhibits a wide range of capabilities, including translation, programming, and mathematical calculations. Notably, it stands out as a bilingual LLM, highlighting its ability to effectively process and comprehend text in Chinese.* **ChatGLM**, developed by Tsinghua University, is an open-source dialogue language model that supports bilingual Q&A in Chinese and English, with a particular focus on Chinese optimization. Built on the General Language Model (GLM) architecture and utilizing model quantization technology, the ChatGLM can be easily deployed on consumer-grade graphics cards, enabling local implementation by users.* **Chinese-Alpaca-Plus** is achieved by extending LLaMA's existing vocabulary with an additional 20,000 Chinese tokens from Meta AI (formerly known as Facebook AI Research Laboratory). In this version, we use a model with 33 billion parameters. The training text has been expanded to 120GB, and the fine-tuning instruction data has been increased to 4.3M.
+
+translate: 这篇论文旨在评估ChatGPT的性能,它平衡了性能与成本(OpenAI API调用数量). **Claude致力于保持诚实并确保用户安全,由Anthropic开发. 由于其令人印象深刻的大小,Claude位列全球最大的语言模型之一,并对ChatGPT作为一个强有力的竞争对手提出了严峻的挑战.* **LMIntern**,由上海AI实验室开发的复杂语言模型,拥有多轮对话能力和令人印象深刻的理解超长文本的能力. 这个语言模型是精心设计的,以满足中文语言的细微差别,使它能够全面理解和有效地理解中文文本过程. **Claude与其令人印象深刻的尺寸,与其令人印象深刻的尺寸,Claude位列全球最大的语言模型之一,并对ChatGPT构成一个强大的竞争对手.* **LMIntern**,由上海AI实验室开发的复杂语言模型,拥有多轮对话能力和令人印象深刻的理解超长文本能力. **************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+
+summary: OpenAI的GPT系列开发了一款具有强大语言能力的模型，拥有大量的参数，使其能够高效地解决复杂问题。本文旨在评估ChatGPT的表现，同时平衡性能与成本(OpenAI API调用次数)。Claude由Anthropic公司开发，致力于保持诚实并确保用户安全。作为全球最大的语言模型之一，Claude对ChatGPT构成了强大的竞争挑战。上海人工智能实验室开发的InternLM具有多轮对话能力，能理解超长文本，展示了卓越的理解和处理中文文本的能力。我们采用了120亿参数版本。IDEA开发的Ziya是一个广泛且强大的预训练模型，来自LLaMa的130亿参数，具备多种功能，如翻译、编程和数学计算。值得注意的是，它作为双语LLM脱颖而出，强调了有效处理和理解中文文本的能力。清华大学开发的ChatGLM是一个支持中英文双向问答的开源对话语言模型，特别关注中文优化。基于General Language Model(GLM)架构，利用模型量化技术，ChatGLM可以轻松部署在消费级显卡上，实现用户端的本地实施。最后，通过从Meta AI(前身为Facebook AI研究实验室)扩展LLaMA的词汇库，实现了Chinese-Alpaca-Plus。这个版本使用了330亿参数的模型，训练数据增加到120GB，微调指导数据达到43万。
+\begin{table}\begin{tabular}{c c c} \hline \hline**Organization** & **Model Name** & **Model Parameters** \\ \hline OpenAI & ChatGPT[15] & 200B \\ \hline Anthropic & Claude[16] & \textgreater{}52B \\ \hline Shanghai AI Lab & InternLM & 120B \\ \hline IDEA & Ziya-13B & 13B \\ \hline Tsinghua University & ChatGLM-130B[17] & 130B \\ \hline - & Chinese-Alpaca-Plus-33B[18, 19] & 33B \\ \hline \hline \end{tabular}\end{table}Table 2: The LLMs evaluated in this paper.
+
+translate: \begin{table}\begin{tabular}{c c c} \hline \hline**Organization** & **Model Name** & **Model Parameters** \\ \hline OpenAI & ChatGPT[15] & 200B \\ \hline Anthropic & Claude[16] & \textgreater{}52B \\ \hline Shanghai AI Lab & InternLM & 120B \\ \hline IDEA & Ziya-13B & 13B \\ \hline Tsinghua University & ChatGLM-130B[17] & 130B \\ \hline - & Chinese-Alpaca-PlusB-33[18, 19] & 33B \\hline \hline \end{tabular}\end{table}Table 2:本文评估的LLMs.
+
+summary: 这段话是关于论文中评估的不同语言模型。表格2列出了这些模型，包括组织、模型名称和模型参数。OpenAI的ChatGPT有200亿参数，Anthropic的Claude有超过520亿参数，上海人工智能实验室的InternLM有120亿参数。IDEA的Ziya-13B有130亿参数，而清华大学和阿里巴巴共同开发的Chinese-Alpaca-Plus-33B有330亿参数。
+
+### Evaluation on Task Planning Ability
+
+In this section, to evaluate the planning capabilities of the LLM-based AI agents, we have structured the evaluations as follows.
+For TPTU-OA, we begin by examining the agents' ability to plan the order of tool use. This is followed by an evaluation of the agents' capacity to not only plan the sequence of tools but also the corresponding subtask descriptions. Subsequently, we conduct a specialized planning evaluation where the agents must generate multiple sequences of key-value pairs of the form {tool: subtask description} in complex problem teardowns. Moreover, we expand the toolset with additional, unrelated tools to further challenge and reassess the planning ability of the LLM-based AI agents.
+For TPTU-SA, we follow the regime that the agent should generate multiple sequences of key-value pairs of the form {tool: subtask description} for evaluation.
+
+
+translate: 在本节中,为了评估基于 LLM 的 AI 代理的规划能力,我们将评估结构如下:对于 TPTU-OA,我们首先检查代理的计划工具使用顺序的能力 ⁇ 接下来是评估代理不仅计划工具序列,还计划相应的子任务描述的能力 ⁇ 接下来,我们进行专门的规划评估,其中代理必须在复杂问题解析中生成多个形式 {tool:子任务描述} 的关键-值对的序列 ⁇ 此外,我们还将扩展工具集以额外的无关工具来进一步挑战和重新评估基于 LLM 的 AI 代理的规划能力 ⁇ 对于 TPTU-SA,我们遵循的机制是代理应该生成多种形式 {tool:子任务描述} 的关键-值对的序列进行评估 ⁇ 
+
+summary: 在本节中，为了评估基于LLM的AI代理的规划能力，我们设计了以下评估方案。对于TPTU-OA，我们首先检查代理在工具使用顺序规划方面的能力。接下来，我们将评估代理不仅能规划工具序列，还能规划相应的子任务描述的能力。然后，我们在复杂问题拆卸场景下进行专门的规划评估，要求代理生成形式为{工具：子任务描述}的关键值对的多条序列。此外，我们还增加了一些与原始工具无关的其他工具，以进一步挑战和评估基于LLM的AI代理的规划能力。对于TPTU-SA，我们也遵循类似的评估流程，要求代理生成形式为{工具：子任务描述}的关键值对的多条序列。
+#### 3.2.1 Tptu-Oa: Tool Order Planning
+
+Here, we utilize two kinds of tools for problem-solving: the SQL generator, which retrieves data from databases, and the Python generator, adept at addressing mathematical questions.
+
+translate: 在这里,我们使用两种解决问题的工具:从数据库中检索数据的SQL生成器和解决数学问题的Python生成器.
+
+summary: 这里，我们使用了两种解决问题的方法：一种是SQL生成器，它从数据库中提取数据;另一种是Python生成器，擅长解决数学问题。
+To validate the capacity of the LLM-based AI agents to strategically plan for the tool order, we designed the prompt as shown in Figure 7 of Appendix B. This design is motivated by the goal to assess the ability of LLM-based AI agents to understand complex problems, subsequently decomposing them into a sequence of simpler tasks executed by appropriately selected tools. Specifically, we require the LLM-based AI agent to follow our instructions, select tools from our pre-defined tool set with detailed function descriptions, conform to the given format strictly, and understand the demonstrations to learn from them.
+
+translate: 为了验证基于 LLM 的 AI 代理对工具顺序进行战略规划的能力,我们设计了按附录 B 的图 7 所示的提示.这个设计的动机是评估基于 LLM 的 AI 代理理解复杂问题的能力,然后将其分解成由适当选择的工具执行的简单任务序列.具体来说,我们要求基于 LLM 的 AI 代理遵循我们的指示,从我们的预定义的工具集中选择具有详细功能描述的工具,严格遵守给定的格式,并理解从它们中学习的演示.
+
+summary: 我们设计了一个提示，如附录B中的图7所示，以评估基于LLM的AI代理在策略性规划工具顺序方面的能力。这个设计旨在评估LLM-based AI代理理解复杂问题的能力，然后将它们分解成一系列由适当选择的工具执行的简单任务。具体来说，我们要求基于LLM的AI代理遵循我们的指示，从预定义的工具集中选择工具，严格遵守给定的格式，并理解演示以便从中学习。
+Upon feeding these prompts into the LLM-based AI agents under evaluation, we obtained the following accuracy rates for the tool planning, as shown in Table 3.
+
+translate: 在将这些提示输入到正在评估的基于 LLM 的人工智能代理时,我们获得了工具规划的以下准确率,如表 3 所示.
+
+summary: 在将这些提示输入到正在评估的基于LLM的AI代理后，我们得到了以下工具规划的准确率，如表3所示。
+The results of our experiments indicate that models, notably Ziya and ChatGLM, frequently grapple with the generation of lists in the correct format. For other models, the predominant challenges lie in generating tools in the correct sequence or in the occasional omission of necessary tools. Nonetheless, the issue of parsing list formats is generally negligible.
+
+translate: 我们的实验结果表明,模型,特别是Ziya和ChatGLM,经常在正确格式的列表生成上挣扎.对于其他模型来说,主要的挑战在于在正确的顺序中生成工具或偶尔忽略必要的工具.尽管如此,解析列表格式的问题通常是可以忽略的.
+
+summary: 我们的实验结果表明，尤其是Ziya和ChatGLM模型，经常在生成正确的列表格式方面遇到困难。对于其他模型，主要挑战在于正确顺序生成工具或偶尔遗漏必要的工具。然而，解析列表格式的問題通常可以忽略不计。
+These findings suggest that the majority of LLM-based AI agents possess a fundamental capability to analyze the tool needs of a given problem and understand its task requirements. To further explore whether these LLM-based AI agents can effectively break down the original problem into sub-tasks, we proceed to the following section.
+
+translate: 这些发现表明,大多数基于 LLM 的 AI 代理具有分析给定问题的工具需求和理解其任务要求的基本能力 ⁇ 
+
+summary: 这些发现表明，大多数基于LLM的AI代理具有分析特定问题所需工具的能力，并理解其任务需求。为了进一步探讨这些基于LLM的AI代理是否能有效地将原始问题分解为子任务，我们将进入下一部分进行研究。
+
+#### 3.2.2 Tptu-Oa: Tool Order Planning and Subtask Description Generation
+
+Simply planning the order of tool usage is not sufficient to fully address a problem. To truly solve it, we need to provide a guide or instructions for the usage of each tool, that is, a decomposed subtask description. Therefore, we can decompose the original complex problem into two separate sequences. One sequence represents the order in which the tools are utilized, while the other sequence corresponds to the subtask descriptions that each tool in the tool sequence aims to resolve. A problem is only truly solved when both the tool and subtask description sequences have been successfully planned. In order to verify whether LLM-based AI agents truly have the ability to solve complex problems, we designed a new prompt as shown in Figure 8 of Appendix B. The main improvement is to plan the corresponding subtask description for each tool after the tool planning is completed.
+
+translate: 因此,我们可以将原始复杂问题分解为两个单独的序列. 一个序列代表工具的使用顺序,而另一个序列对应于工具序列中的每个工具旨在解决的子任务描述. 一个问题只有当工具和子任务描述序列已经成功规划时才真正解决. 为了验证基于 LLM 的人工智能代理是否真的有能力解决复杂问题,我们设计了一个新的提示,如附录 B 的图 8 所示.
+
+summary: 仅仅规划工具使用的顺序是不够的，以充分解决一个问题。要真正解决它，我们需要为每个工具提供指导或使用说明，即分解的子任务描述。因此，我们可以将原始复杂问题分解为两个独立的序列。一个序列表示工具使用的顺序，另一个序列对应于每个工具在工具序列中旨在解决的子任务描述。只有当工具和子任务描述序列都成功计划时，问题才被认为是真正解决了。为了验证基于LLM的AI代理是否真正具有解决复杂问题的能力，我们在附录B中的图8中设计了一个新的提示。主要改进是在完成工具规划后为每个工具规划相应的子任务描述。
+After feeding the prompt to these LLM-based AI agents, we get results shown in Table 4.
+
+translate: 在向这些基于 LLM 的 AI 代理提供提示后,我们得到表 4 中显示的结果 ⁇ 
+
+summary: 在向这些基于LLM的AI代理提供提示后，我们得到了表4中的结果。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 100\% & 100\% & 45\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Accuracy** & 45\% & 20\% & 80\% \\ \hline \hline \end{tabular}\end{table}Table 3: The evaluation results for the planning of tool order generation.
+
+translate: \begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**精度** & 100\% & 100\% & 45\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**精度** & 45\% & 20\% & 80\% \\ \hline \hline \end{tabular}\end{table}表3:工具订单生成规划的评估结果.
+
+summary: 根据提供的表格，我们可以得出以下总结：
+
+在这个实验中，我们评估了四个不同的模型在工具顺序生成任务上的表现。这些模型分别是：ChatGPT、Claude、Ziya和ChatGLM。此外，还有两个预训练的中文模型：Chinese-Alpaca-Plus和InternLM。
+
+在准确性方面，所有这五个模型都达到了100%的准确率。这意味着它们都能正确地为给定的任务生成正确的工具顺序。然而，在实际应用中，可能需要考虑其他因素，如计算复杂性和可扩展性等。
+Although the generation of tool sequences and their corresponding subtask descriptions might be an effective way to problem-solving, there is a significant decrease in accuracy for all LLMs as can be seen. We hypothesize that there are a few potential drawbacks to this method:
+
+translate: 虽然生成工具序列及其相应的子任务描述可能是解决问题的有效方法,但所有LLM的准确性都有显著下降,我们可以看到.我们假设这种方法有一些潜在的缺点:
+
+summary: 尽管生成工具序列及其对应的子任务描述可能是一种有效的解决问题的方法，但所有LLM(语言模型)在准确性方面都有显著下降。我们推测这种方法存在一些潜在的缺点：
+1. **Difficulty in Error Tracking and Debugging**. Generating the complete tool and subtask sequences may make it more challenging to track and debug errors. If an error arises within the sequence, it might require a total regeneration instead of a simple modification or repair to the erroneous part.2. **Tool-Subtask Pairing Issue**. If all tool sequences and subtask descriptions are generated independently, there's an inherent risk of misalignment between the tools and their corresponding subtasks. This could potentially lead to an improper pairing, which, in turn, could result in a flawed or ineffective solution that fails to appropriately resolve the given problem.3. **Lack of Flexibility**. The approach may lack this flexibility when facing complex problems requiring adjustments to the tool or subtask sequence.4. **Dependency on Global Information**. Generating the entire tool and subtask sequences requires a global understanding and planning of the entire problem. However, in some instances, certain parts of the problem might not be clear at the early stages of problem-solving, which could pose challenges within this framework.
+
+translate: 如果所有的工具序列和子任务描述是独立生成的,那么工具和相应的子任务序列之间存在错对的风险. 这可能会导致错误的配对,这反过来可能会导致错误或无效的解决方案,无法适当解决给定的问题. 3. 缺乏灵活性. 当需要对工具序列或子任务进行调整时,该方法可能缺乏这种灵活性. 4. 全球依赖性. 产生整个工具序列和子任务描述.
+
+summary: 这段话主要讨论了在解决问题的过程中，错误跟踪和调试的难度、工具子任务配对问题、缺乏灵活性以及依赖全球信息的问题。当生成的完整工具序列和子任务序列可能导致错误难以追踪和修复时，这会增加挑战性。此外，如果所有工具序列和子任务描述是独立生成的，那么它们之间可能会存在不匹配的风险，从而导致不合适的搭配，进而影响解决方案的有效性和准确性。这种方法在面对需要调整工具或子任务序列的复杂问题时可能缺乏灵活性。同时，生成整个工具和子任务序列需要对整个问题有全面的了解和规划，但在某些情况下，问题的一些部分在解决问题初期可能并不明确，这可能会给这个框架带来挑战。
+
+#### 3.2.3 Tptu-Oa: The Planning of Tool-Subtask Pair
+
+To mitigate the aforementioned issue, we propose a novel approach to foster flexible problem-solving with the LLM-based AI agent. We prompt the agent to generate multiple sequences, each consisting of a key-value pair in the format of {tool: subtask description} that associates a tool with its respective subtask description. This allows us to simultaneously plan the tool choice and subtask without the risk of improper matching. Moreover, it offers the flexibility to update the planned sequences in real-time based on evolving problem feedback, enhancing adaptability and efficiency when addressing complex tasks.
+
+translate: 为了缓解上述问题,我们提出一种新颖的方法来促进基于 LLM 的人工智能代理的灵活解决问题.我们提示代理生成多个序列,每个序列由一个键-值对组成,以 {tool: subtask description} 的格式将一个工具与相应的子任务描述联系起来.这允许我们同时计划工具选择和子任务,而不会有不适当的匹配的风险.此外,它提供了基于不断变化的问题反馈的实时更新计划序列的灵活性,提高了解决复杂任务的适应性和效率.
+
+summary: 为了解决上述问题，我们提出了一种基于LLM的AI代理的新方法来培养灵活的问题解决能力。我们引导代理生成多个序列，每个序列包含一个关键值对，格式为{工具：子任务描述}，将工具与其相应的子任务描述关联起来。这使得我们可以同时规划工具选择和子任务，而无需担心不匹配的风险。此外，它还提供了根据不断变化的问题反馈实时更新计划序列的灵活性，从而在处理复杂任务时提高适应性和效率。
+With this consideration, we have designed a unique prompt that encourages this advanced problem-solving strategy. In the following section, we delve into the specifics of this prompt design in Figure 9 of Appendix B. The key improvement in this prompt is its directive for the LLM-based AI agents to stringently adhere to the predefined dictionary format. To facilitate this, we offer several demonstrations in our desired format, serving as references for the language model to follow.
+
+translate: 考虑到这一点,我们设计了一个独特的提示,以鼓励这种先进的解决问题的策略.在下一节中,我们将深入研究附件B的图9中的这个提示设计的细节.这个提示的关键改进是它指示基于LLM的AI代理严格遵守预定义的字典格式.为了促进这一点,我们以我们所需的格式提供几个演示,作为语言模型的参考.
+
+summary: 在考虑这一点后，我们设计了一个独特的提示，以鼓励这种高级问题解决策略。在接下来的第九章(附录B中的图表)中，我们将深入探讨这个提示的设计细节。这个提示的关键改进是要求基于LLM的AI代理严格遵循预定义的词典格式。为了实现这一目标，我们在所需的格式下提供了几个示例，作为语言模型可以参考的范例。
+After feeding the prompt to these LLM-based AI agents, we get results shown in Table 5.
+
+translate: 在向这些基于 LLM 的 AI 代理提供提示后,我们得到表 5 中显示的结果 ⁇ 
+
+summary: 在向这些基于LLM的AI代理提供提示后，我们得到了表5中的结果。
+Analyzing the results from Tables 4 and 5, we observe a marked improvement of 52.9% when the tool-subtask pairs are generated in a unified format compared to separate generation of tools and subtasks.
+
+translate: 分析表4和表5的结果,我们观察到52.9%的显著改善,当工具-子任务对以统一的格式生成时,与单独生成工具和子任务相比.
+
+summary: 从表格4和5的分析结果来看，当我们使用统一格式生成工具子任务对时，相比单独生成工具和子任务，性能提升了52.9%。
+This significant performance enhancement can likely be attributed to the close coupling between tools and their associated subtasks in our unified generation strategy. When tools and subtasks are
+
+translate: 这种显著的性能提升可能归因于我们的统一生成战略中工具及其相关子任务之间的密切联系.
+
+summary: 紧密耦合在一起，这显著提高了性能。这种改进很可能归因于我们在统一生成策略中工具及其相关子任务之间的紧密联系。当工具和子任务相互关联时，可以实现更高的效率。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 55\% & 15\% & 10\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Accuracy** & 10\% & 0\% & 45\% \\ \hline \hline \end{tabular}\end{table}Table 4: The evaluation results for the planning of tool order and subtask description generation.
+
+translate: \begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**精度** & 55\% & 15\% & 10\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**精度** & 10\% & 0\% & 45\% \\ \hline \hline \end{tabular}\end{table}表4:工具顺序规划和子任务描述生成的评估结果.
+
+summary: 根据表格中的数据，我们可以得出以下结论：在规划工具顺序和子任务描述生成方面，ChatGPT的准确率为55%，Claude为15%，Ziya为10%。相比之下，ChatGLM的准确率仅为10%，而Chinese-Alpaca-Plus和InternLM的准确率分别为45%和0%。这表明，使用预训练模型进行对话式AI任务时，选择合适的模型对于提高准确性至关重要。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 75\% & 90\% & 20\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Accuracy** & 0\% & 5\% & 55\% \\ \hline \hline \end{tabular}\end{table}Table 5: The evaluation results for the planning of Tool-Subtask pair.
+
+translate: 表5:工具-子任务对的规划评估结果.
+
+summary: 这段话是关于四种不同模型在工具子任务对规划任务上的表现。根据表格中的数据，ChatGPT的准确率为75%，Claude为90%，Ziya为20%。而ChatGLM和Chinese-Alpaca-Plus的表现较差，前者的准确率为0%，后者为5%。InternLM的准确率最高，达到了55%。
+generated separately, there is a potential disconnect or lack of coherence between the two, which could lead to less accurate or efficient solutions. In contrast, by generating tool-subtask pairs together, we ensure that each tool is directly tied to its relevant subtask, leading to a more coordinated and effective problem-solving approach. This might explain the observed increase in overall performance.
+
+translate: 相比之下,通过一起生成工具-子任务对, 我们确保每个工具与相关的子任务直接关联, 导致更协调和更有效的解决问题的方法. 这可能解释了观察到的整体性能提高.
+
+summary: 单独生成工具和子任务时，可能会出现两者之间的脱节或不一致，从而导致解决方案的不准确或低效。相反，将工具和子任务一起生成可以确保每个工具都直接与其相关子任务相关联，从而采用更协调且有效的解决问题的方法。这可能解释了整体性能的提高。
+
+#### 3.2.4 TPTU-OA: The Planning of Tool-Subtask Pair with Unrelated Tools
+
+So far, our analysis and evaluation have been primarily focused on the LLM-based AI agents' proficiency in planning with specific tools. However, we are also interested in how it would perform when faced with many irrelevant or similar tools. Therefore, for a more comprehensive assessment, we expanded the prompt in Table 9 to include an additional ten unrelated tools, as illustrated in Figure 10 of Appendix B.
+
+translate: 到目前为止,我们的分析和评估主要集中在基于 LLM 的 AI 代理在使用特定工具进行规划的熟练程度上 ⁇ 然而,我们也对它如何在面对许多无关或类似的工具时表现感兴趣 ⁇ 因此,为了更全面的评估,我们扩展了表 9 中的提示,包括另外十个无关工具,如附录 B 的图 10 所示 ⁇ 
+
+summary: 目前，我们的分析和评估主要集中在基于LLM的AI代理在使用特定工具进行规划方面的熟练程度。然而，我们也很想了解当面临许多无关或相似的工具时，它们的表现如何。因此，为了进行更全面的评估，我们在表9中扩展了提示，增加了另外十个与任务无关的工具，如附录B中的图10所示。
+After feeding the prompt to these LLM-based AI agents, we get results shown in Table 6. The results from our expanded evaluation demonstrate that even when presented with irrelevant or similar tools and descriptions, LLM-based AI agents consistently avoid selecting these unrelated tools (i.e., the accuracy has remained unchanged or exhibited only a marginal decrease compared with Table 5). This outcome indicates the effectiveness of our designed prompt, which successfully guides the LLM-based agents to understand the appropriate tool sequence for complex problem decomposition.
+
+translate: 在向这些基于 LLM 的 AI 代理提供提示后,我们得到了表 6 中显示的结果 ⁇ 我们的扩展评估结果表明,即使在提供无关或类似的工具和描述时,基于 LLM 的 AI 代理也始终避免选择这些无关的工具 (即,准确度保持不变或与表 5 相比仅略有下降).
+
+summary: 在向这些基于LLM的AI代理提供提示后，我们得到了表6中的结果。扩大的评估结果表明，即使在面对无关或相似的工具和描述时，基于LLM的AI代理仍然能够避免选择这些不相关的工具(即准确度保持不变或仅略有下降，与表5相比)。这一结果表明我们的设计提示非常有效，成功地引导了基于LLM的代理理解复杂问题分解的适当工具顺序。
+This observation reinforces the notion that a well-structured and informative prompt can efficiently guide AI agents to understand the core essence of the problem, thereby enabling them to sift through irrelevant information and focus on key tasks. This successful discrimination against unrelated tools also points towards the models' ability to understand the specific context of a problem and select the appropriate tools, thereby enhancing the overall problem-solving process.
+
+translate: 这种观察加强了这样一种观点,即结构良好且信息丰富的提示可以有效地引导人工智能代理人了解问题的核心本质,从而使他们能够筛选无关信息并专注于关键任务. 这种对无关工具的成功歧视也指向了模型理解问题特定背景和选择适当工具的能力,从而增强了整体问题解决过程.
+
+summary: 这项观察进一步证实了这样一个观点：一个结构良好且信息丰富的提示可以有效地引导AI代理理解问题的核心本质，从而使它们能够筛选掉无关的信息并专注于关键任务。这种成功区分与相关工具的能力也表明模型能够理解问题特定背景，并选择适当的工具，从而提高整体问题解决过程的效果。
+
+#### 3.2.5 TPTU-SA: The Planning of Tool-Subtask Pair Generation
+
+Upon identifying the drawbacks of first generating a list of tools and then generating corresponding subtask descriptions, we decided to focus subsequent tests on the generation of tool-subtask pairs. Consequently, in this section, we evaluate the capability of TPTU-SA to generate these tool-subtask pairs.
+
+translate: 在确定首先生成工具列表,然后生成相应的子任务描述的缺点后,我们决定将后续测试的重点放在生成工具-子任务对上.因此,在本节中,我们评估TPTU-SA生成这些工具-子任务对的能力.
+
+summary: 在发现先生成工具列表然后生成相应子任务描述的缺点后，我们决定将后续测试集中在生成工具-子任务对上。因此，在本节中，我们将评估TPTU-SA生成这些工具-子任务对的能力。
+To achieve the goal of recursively generating tool-subtask pairs, we have designed prompts as illustrated in Figure 11 of Appendix B.
+
+translate: 为了实现递归生成工具-子任务对的目标,我们设计了按附录B的图11所示的提示.
+
+summary: 为实现递归生成工具子任务对的目标，我们设计了如附录B图11所示的提示。
+The evaluation results are shown in Table 7. Compared with results shown in Table 5, TPTU-SA generally performs better than TPTU-OA especially for high-performing LLMs (e.g., ChatGPT, Claude and InterLM). We propose the following potential reasons for this observation:
+
+translate: 评估结果见表 7. 与表 5 所示的结果相比,TPTU-SA 总的来说比 TPTU-OA 表现更好,特别是在高绩效的 LLM (例如 ChatGPT,Claude 和 InterLM) 方面.
+
+summary: 表7的评估结果显示，与表5中的结果相比，TPTU-SA在高性能的LLM(如ChatGPT、Claude和InterLM)上普遍优于TPTU-OA。我们提出以下可能原因来解释这一观察：
+1. **Sequentiality Mimics Human Problem-Solving**: In real-world scenarios, humans tend to solve complex problems by breaking them down into smaller, manageable subtasks which are often handled sequentially. Sequential agents are designed to mimic this step-by-step approach, which might inherently suit complex problem-solving better.
+
+translate: 1. **顺序模仿人类解决问题**:在现实世界中,人类倾向于将复杂问题分解成更小的,可管理的子任务,这些子任务通常是顺序处理的. 顺序代理被设计为模仿这一逐步的方法,这可能更适合复杂问题解决.
+
+summary: 这段话的中文总结如下：
+
+1. 顺序性模拟人类问题解决：在现实世界的情境中，人们通常会将复杂问题分解成更小的、可管理的小任务，并逐个处理。顺序性代理设计旨在模仿这种逐步的方法，这可能更适合于复杂问题的解决。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 70\% & 90\% & 10\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InterLM \\ \cline{2-4}**Accuracy** & 0\% & 5\% & 50\% \\ \hline \hline \end{tabular}\end{table}Table 6: The evaluation results for the planning of Tool-Subtask pair with unrelated tools.
+
+translate: 表6:与无关工具的工具-子任务对对规划的评估结果.
+
+summary: 这段话描述了四个模型在完成特定任务时的准确率。具体来说，它比较了ChatGPT、Claude和Ziya这三个模型在处理与工具无关的子任务对时的表现。同时，还介绍了两个新模型：ChatGLM和Chinese-Alpaca-Plus。最后，表格展示了这些模型在这项任务上的准确率。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 80\% & 100\% & 10\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InterLM \\ \cline{2-4}**Accuracy** & 0\% & 0\% & 65\% \\ \hline \hline \end{tabular}\end{table}Table 7: The evaluation results for the planning of Tool-Subtask with the sequential agent.
+
+translate: \begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**精度** & 80\% & 100\% & 10\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InterLM \\ \cline{2-4}**精度** & 0\% & 0\% & 65\% \\ \hline \hline \end{tabular}\end{table}表7:用于顺序代理的工具子任务规划的评估结果.
+
+summary: 这段话描述了四种不同的模型在执行特定任务时的准确率。具体来说，它比较了ChatGPT、Claude和Ziya这三种基于序列的规划模型，以及一个名为Tool-Subtask的特定任务。结果显示，ChatGPT的准确率为80%，而Claude和Ziya分别为100%和10%。此外，还介绍了两个非基于序列的模型：ChatGLM和Chinese-Alpaca-Plus，它们分别没有准确率(0%)和65%的准确率。
+2. **Richer Contextual Understanding**: Sequential agents are exposed to the outcome of each previous subtask before moving on to the next one. This iterative process could facilitate a richer understanding of the problem context, enabling more accurate task planning and tool usage.3. **Flexibility in Task Management**: In comparison to one-step agents, sequential agents might have more flexibility in managing tasks. They have the opportunity to correct errors or adjust their strategy after each step, which can lead to improved overall performance.4. **Improved Learning From History**: The sequential process provides a history of actions and results which can be beneficial in learning. The agent can use this history to make better predictions about what tool to use next or what subtask to tackle, leading to more accurate and efficient problem-solving.
+
+translate: 2. **更丰富的上下文理解**:序列代理在进入下一步之前接触到前面的每个子任务的结果. 这种迭代过程可以促进对问题背景的更丰富的理解,从而实现更准确的任务规划和工具使用. 3. **任务管理的灵活性**:与单步代理相比,序列代理可能在管理任务方面有更多的灵活性. 他们有机会纠正错误或调整他们的策略,这可能导致整体性能的提高. 4. **改进历史学习**:序列过程提供了行动和结果的历史,这可能对学习有益. 代理可以使用这个历史来更好地预测下一步使用什么工具或子任务来解决什么,从而导致更准确和有效的问题解决.
+
+summary: 2. 丰富的上下文理解：顺序代理在执行每个子任务之前都会了解前一个子任务的结果。这种迭代过程有助于更深入地理解问题背景，从而提高任务规划和工具使用的效果。
+3. 任务管理灵活性：与一步式代理相比，顺序代理在任务管理方面可能具有更大的灵活性。他们在每次步骤后都有机会纠正错误或调整策略，这有助于整体性能的提高。
+4. 从历史中学习的能力：顺序过程提供了行动和结果的历史记录，这对学习非常有帮助。代理可以利用这些历史来预测下一个最佳工具或解决哪个子任务，从而实现更准确、高效的问题解决。
+These points of analysis suggest that the structure and operation of sequential agents inherently confer certain advantages in complex problem-solving scenarios, leading to their superior performance.
+
+translate: 这些分析点表明,序列代理的结构和操作在复杂的解决问题场景中固有地赋予某些优势,从而导致其卓越的性能.
+
+summary: 这些分析点表明，顺序代理的结构和运作在复杂问题解决场景中固有地赋予了某些优势，从而导致它们表现得更好。
+
+### Evaluation on Tool Usage Ability
+
+Before evaluating the end-to-end multi-tool usage ability of LLM-based AI agents, we first evaluate the effectiveness of single-tool usage for SQL generation and mathematical code generation.
+Subsequently, to assess the end-to-end performance of LLMs across various tools, two types of agents (TPTU-OA and TPTU-SA) were developed and several LLMs were subjected to testing under these agents. The role of the agents is to break down complex questions into simpler sub-questions and plan corresponding tools to solve them, based on the available toolset and corresponding tool descriptions.
+
+
+translate: 在评估基于 LLM 的 AI 代理的端到端多工具使用能力之前,我们首先评估 SQL 生成和数学代码生成的单工具使用效率 ⁇ 随后,为了评估 LLM 在各种工具中的端到端性能,开发了两种类型的代理 (TPTU-OA 和 TPTU-SA),并在这些代理下测试了几种代理 ⁇ 代理的角色是根据可用的工具和相应的工具描述,将复杂的问题分解为更简单的子问题,并计划相应的工具来解决这些问题 ⁇ 
+
+summary: 在评估基于LLM的AI代理的端到端多工具使用能力之前，我们首先评估了单个工具在SQL生成和数学代码生成方面的有效性。然后，为了评估LLM在各种工具上的端到端性能，我们开发了两种类型的代理(TPTU-OA和TPTU-SA)，并让这些代理对几个LLM进行了测试。代理的作用是将复杂问题分解成更简单的子问题，并根据可用的工具集和相应的工具描述来规划解决这些问题的工具。
+#### 3.3.1 The effectiveness of Single Tool Usage
+
+Our aim is to systematically assess how effectively these models can use various tools, focusing on their proficiency with SQL and other coding languages.
+
+translate: 我们的目标是系统地评估这些模型如何有效地使用各种工具,重点是它们对SQL和其他编码语言的熟练程度.
+
+summary: 我们的目标是系统地评估这些模型在使用各种工具时的有效性，特别关注它们在SQL和其他编程语言方面的熟练程度。
+The Effectiveness of simple SQL CreationUsing the schemas provided in Table 12 and Table 13, we construct questions similar to those in Table 14, and refer readers to Appendix A. These questions are posed to various LLMs using our specifically designed prompts in Appendix B.
+
+translate: 使用表12和表13中提供的方案,我们构建类似于表14中的问题,并将读者转介到附录A. 这些问题是使用我们在附录B中专门设计的提示向各种LLM提出.
+
+summary: 这段话的中文总结如下：
+
+简单SQL创建的效果
+使用表格12和13中的模式，我们构建了与表格14类似的问题，并引导读者参考附录A。这些问题是通过我们在附录B中设计的特定提示向各种LLM提出的。
+Following the tailored prompts, the LLMs are evaluated based on their responses to the presented queries. The results of this comprehensive assessment are compiled and exhibited in Figure 8.
+
+translate: 根据量身定制的提示,根据他们对提出的查询的回答进行评估.
+
+summary: 在经过个性化提示后，人工智能语言模型(LLM)将根据其对给定问题的回答进行评估。这些综合评估的结果将被整理并展示在图8中。
+This verifies the capabilities of each LLM in handling varying simple single-table SQL queries, thus providing a basis for comparison and analysis.
+
+translate: 这验证了每个LLM在处理不同简单的单表SQL查询的能力,从而为比较和分析提供了基础.
+
+summary: 这证实了每个大型语言模型处理不同简单单表SQL查询的能力，从而为比较和分析提供了基础。
+The Effectiveness of Complex Nested SQL CreationUsing the schemas provided in Table 15, 16, 17, and 18, we construct questions similar to those in Table 19, and refer readers to Appendix A. For complex nested SQL questions, to further verify the SQL tool creation capability of LLMs, we have designed two types of prompts. One is the direct-guidance type, which explicitly informs the model that it needs to generate nested SQL query statements, as shown in Figure 13 in Appendix B.
+
+translate: 对于复杂的嵌套 SQL 问题,为了进一步验证 LLM 的 SQL 工具创建能力,我们设计了两种类型的提示 ⁇ 一个是直接指导类型,它明确告知模型它需要生成嵌套 SQL 查询语句,如附件 B 的图 13 所示 ⁇ 
+
+summary: 这段话的中文总结如下：
+
+通过使用表15、16、17和18中的模式，我们构建了与表19类似的问题。同时，我们也引导读者参考附录A。对于复杂嵌套的SQL查询问题，为了进一步验证LLM(大型语言模型)在生成SQL语句方面的能力，我们设计了两种类型的提示。一种是直接指导型，明确告诉模型需要生成嵌套的SQL查询语句，如附录B中的图13所示。
+The other is based on the Chain-of-Thought (CoT) [20] approach, which leverages the model's ability to reason step by step to comprehend and craft SQL tools, and the prompt is shown in Figure 14 in Appendix B. This method guides the model to sequentially generate SQL query clauses based on the problem context, thus breaking down the complex query generation task into smaller and manageable
+
+translate: 另一个是基于思维链 (CoT) [20] 方法,它利用模型的能力逐步推理来理解和制作SQL工具,并且提示在附录B中的图14中显示. 这种方法指导模型根据问题上下文顺序生成SQL查询句子,从而将复杂的查询生成任务分解为更小和可管理的
+
+summary: 另一个方法基于思维链(CoT)[20]方法，它利用模型逐步推理的能力来理解和创建SQL工具。提示如图14所示，位于附录B中。这种方法指导模型根据问题背景顺序生成SQL查询分句，从而将复杂的查询生成任务分解成更小、更易于管理的部分。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 90\% & 100\% & 50\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Accuracy** & 30\% & 20\% & 90\% \\ \hline \hline \end{tabular}\end{table}Table 8: The evaluation results for simple SQL questions.
+
+translate: \begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**准确性** & 90\% & 100\% & 50\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**准确性** & 30\% & 20\% & 90\% \\ \hline \hline \end{tabular}\end{table}表 8:简单的SQL问题评估结果.
+
+summary: 这张表格展示了四种模型在回答简单SQL问题时的准确率。其中，ChatGPT的准确率为90%，Claude为100%，Ziya为50%。而ChatGLM、Chinese-Alpaca-Plus和InternLM的准确率分别为30%、20%和90%。
+subtasks. This approach provides the model with a structured way to handle complex SQL tasks and showcases its capacity to engage in incremental reasoning and problem-solving.
+
+translate: 这种方法为模型提供了一种结构化的方式来处理复杂的SQL任务,并展示了它参与增量推理和解决问题的能力.
+
+summary: 这段话用中文总结如下：
+
+这种方法为模型提供了一种结构化的方式来处理复杂的SQL任务，并展示了它在逐步推理和解决问题方面的能力。
+The design of these two types of prompts serves as the backbone of our evaluation for complex nested SQL questions. While the direct-guidance approach focuses on testing the model's raw ability to generate SQL queries when explicitly instructed, the CoT-based approach evaluates a more nuanced capability: the model's reasoning and problem-solving skills in a step-by-step manner. Both these methods present unique challenges and offer valuable insights into the strengths and potential areas of improvement for the large language model's SQL tool generation ability. Subsequently, we will explore these two dimensions based on our experimental evaluations shown in Table 9.
+
+translate: 这两种类型的提示的设计是复杂嵌套SQL问题评估的骨干.而直接指导方法侧重于测试模型在明确指令时生成SQL查询的原始能力,而基于CoT的方法则以更微妙的能力进行评估:模型的推理和解决问题的技能.这两种方法都提出了独特的挑战,并为大型语言模型的SQL工具生成能力提供了有价值的见解.随后,我们将根据表9所示的实验评估探索这两个维度.
+
+summary: 这段话主要介绍了两种提示设计在复杂嵌套SQL问题评估中的重要性。直接指导方法侧重于测试模型在明确指示下生成SQL查询的原始能力，而基于CoT的方法则评价了模型在逐步解决问题和推理方面的更微妙的能力。这两种方法各自面临独特的挑战，并为大型语言模型的SQL工具生成能力的优势和改进领域提供了宝贵的见解。接下来，我们将根据表9中展示的实验评估来探索这两个维度。
+From the above results in Table 9, it is clear that different models possess varying levels of proficiency in handling complex nested SQL tasks. Some models, like Claude, exhibit a robust capability in SQL generation, no matter whether the approach is direct or CoT-based. Most of these models demonstrate the SQL tool usage capability.
+
+translate: 从表9中的上述结果中,很明显,不同的模型在处理复杂的嵌套SQL任务方面具有不同水平的熟练程度. 一些模型,如Claude,在SQL生成中表现出强大的能力,无论方法是直接的还是基于CoT的. 这些模型中的大多数都展示了SQL工具的使用能力.
+
+summary: 从表9中的结果可以明显看出，不同的模型在处理复杂嵌套SQL任务方面的能力存在差异。例如，Claude等模型无论采用直接方法还是CoT方法，都表现出在SQL生成方面的高效能。这些模型大多数都能展示出使用SQL工具的能力。
+Specifically, some models such as ChatGLM show a distinct preference for the CoT-based approach, their performance improves when problems are broken down into smaller, manageable sub-tasks. This suggests that these models may have a stronger ability in sequential problem-solving and benefit more from step-by-step guidance. Conversely, models like Ziya and InternLM show a drop in performance when tasks are guided in the CoT-based format. This might indicate challenges in managing dependencies between sub-tasks or handling the continuity in sequential problem-solving. Lastly, Chinese-Alpaca-Plus shows significant room for improvement in complex SQL generation tasks. This shows that not all models are equally suited to handle advanced problem-solving involving nested SQL queries.
+
+translate: 具体来说,一些模型,如ChatGLM,显示出对CoT-based方法的明显偏好,当问题被分解成更小,可管理的子任务时,它们的性能会得到改善. 这表明这些模型可能在顺序解决问题方面有更强的能力,并从一步一步的指导中获益. 相反,Ziya和InternLM等模型在任务以CoT-based格式指导时表现出性能下降. 这可能表明在管理子任务之间的依赖关系或处理顺序解决问题的连续性方面存在挑战. 最后,中国-Alpaca-Plus显示出在复杂的高级SQL生成任务中有很大的改进空间. 这表明,并非所有模型都同样适合处理涉及嵌套SQL查询的问题解决.
+
+summary: 特别地，一些模型如ChatGLM明显更倾向于使用CoT方法，当问题被分解成较小的可管理子任务时，它们的性能会提高。这表明这些模型在序列问题解决方面可能具有更强的能力，并从逐步指导中受益更多。相反，像Ziya和InternLM这样的模型在采用CoT格式的问题引导下表现下降。这可能表明处理子任务之间依赖关系或处理连续性方面的挑战。最后，Chinese-Alpaca-Plus在复杂的SQL生成任务上表现出很大的改进空间。这表明并非所有模型都能同等适应涉及嵌套SQL查询的高级问题解决。
+Overall, these findings underscore the importance of tailoring evaluation and training methodologies to the individual strengths and weaknesses of each model. By adopting this approach, we can better understand the performance variations across different models and provide targeted improvements to enhance their problem-solving abilities. Furthermore, this analysis highlights the potential of LLM-based agents in real-world applications, and the need to push their boundaries through continued research and development.
+
+translate: 总的来说,这些发现强调了根据每个模型的优势和弱点调整评估和培训方法的重要性. 通过采用这种方法,我们可以更好地理解不同模型的性能差异,并提供有针对性的改进,以提高他们的解决问题的能力. 此外,这项分析强调了基于LLM的代理人在现实应用中的潜力,以及通过持续的研究和发展来推动其边界的必要性.
+
+summary: 总的来说，这些发现强调了为每个模型的个体优势和劣势量身定制评估和培训方法的重要性。通过采用这种方法，我们可以更好地了解不同模型之间的性能差异，并提供有针对性的改进以提高它们的解决问题的能力。此外，这一分析突显了基于LLM的代理在现实世界应用中的潜力，以及继续通过研究和开发来拓展其边界的必要性。
+The Effectiveness of Mathematical Code CreationFollowing our evaluation of the LLM's proficiency in creating complex SQL queries, we now shift our focus to another tool creation: the creation of mathematical code. To the best of our knowledge, while large language models possess significant capabilities, they often fall short of providing highly accurate solutions to mathematical problems. Guiding these LLMs to generate mathematical code, and subsequently leveraging external tools to execute and derive the solutions, could significantly enhance their ability to tackle mathematical challenges.
+
+translate: 数学代码创建的有效性 在我们评估了 LLM 在创建复杂的 SQL 查询中的熟练程度后,我们现在将重点转移到另一个工具创建:创建数学代码.据我们所知,虽然大型语言模型具有显著的能力,但它们通常无法提供高度准确的数学问题的解决方案. 指导这些 LLM 生成数学代码,然后利用外部工具来执行和导出解决方案,可以显著提高他们应对数学挑战的能力.
+
+summary: 在数学代码创建的有效性方面，我们对LLM在生成复杂SQL查询方面的能力进行了评估。现在我们将关注另一个工具的创建：数学代码的创建。据我们所知，尽管大型语言模型具有很大的潜力，但它们在解决数学问题时往往无法提供高度准确的解决方案。通过引导这些大语言模型生成数学代码，然后利用外部工具执行和推导出解决方案，可以显著提高它们应对数学挑战的能力。
+In the upcoming section, we will conduct a detailed evaluation of guiding these LLMs to generate mathematical code. We aim to shed light on the true capability of these models in generating mathematical code and to elucidate the extent to which they can be utilized to aid in mathematical problem-solving. The prompt about how to guide LLMs is shown in Figure 15 in Appendix B.
+
+translate: 在下一节中,我们将对指导这些LLM生成数学代码的详细评估. 我们的目标是阐明这些模型在生成数学代码方面的真正能力,并阐明它们在多大程度上可以用于帮助解决数学问题. 关于如何指导LLM的提示见附录B中的图15中.
+
+summary: 在接下来的部分，我们将对引导这些大型语言模型生成数学代码进行详细的评估。我们的目标是揭示这些模型在生成数学代码方面的真实能力，并阐明它们在帮助解决数学问题方面能发挥多大作用。关于如何引导大型语言模型的问题示例如图15所示，位于附录B中。
+The results shown in Table 10 indicate that the capabilities of LLM-based agents to generate mathematical code vary considerably. High-performing models like ChatGPT, Claude, and InternLM display excellent proficiency, suggesting their potent ability to solve complex mathematical tasks. Middle-tier models, such as Ziya, show moderate success, indicating the potential for improvement and adaptability with the right training and optimization. Surprisingly, Alpaca demonstrated a notable
+
+translate: 表 10 所示的结果表明,基于 LLM 的代理生成数学代码的能力差异很大 ⁇ 像 ChatGPT,Claude 和 InternLM 这样的高性能模型显示出出色的熟练能力,表明它们有解决复杂数学任务的强大能力 ⁇ 像 Ziya 这样的中层模型显示出中等的成功,表明在正确的训练和优化下有改进和适应性的潜力 ⁇ 令人惊讶的是,Alpaca 表现出显著的
+
+summary: 在表10中的结果表明，基于LLM的代理生成数学代码的能力差异很大。像ChatGPT、Claude和InternLM这样的高性能模型显示出卓越的专业技能，这表明它们有能力解决复杂数学任务。然而，Ziya等中等水平的模型则表现出适度的成功，这意味着在正确的训练和优化下，它们的潜力仍有待提高。令人惊讶的是，Alpaca的表现尤为突出。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Direct-based** & 80\% & 100\% & 50\% \\**CoT-based** & 80\% & 100\% & 40\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Direct-based** & 60\% & 0\% & 60\% \\**CoT-based** & 70\% & 0\% & 50\% \\ \hline \hline \end{tabular}\end{table}Table 9: The evaluation results for complex nested SQL questions.
+
+translate: \begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Direct-based** & 80\% & 100\% & 50\% \\**CoT-based** & 80\% & 100\% & 40\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Direct-based** & 60\% & 0\% & 60\% \\**CoT-based** & 70\% & 0\% & 50\% \\ \hline \end{tabular}\endtable{end}}Table 9:复杂嵌套SQL问题的评估结果.
+
+summary: 根据表格，我们可以得出以下结论：在回答复杂的嵌套SQL问题方面，Claude和Ziya的表现最好，分别为100%和50%;而ChatGPT、ChatGLM和Chinese-Alpaca-Plus在这方面的表现相对较差。其中，ChatGLM在直接方法上表现不佳，但在基于上下文的方法上取得了70%的成绩;而在直接方法上，InternLM表现最佳，达到了60%。
+proficiency in mathematical tasks, despite its poor performance in SQL generation, suggesting a possible inclination towards mathematical problems. In contrast, ChatGLM struggles significantly with mathematical code generation, underlining a potential weak spot in its capabilities and the need for focused improvement in this area.
+
+translate: 尽管在SQL生成方面表现不佳,但它在数学任务方面的熟练程度,这表明它可能倾向于数学问题. 相比之下,ChatGLM在数学代码生成方面存在很大困难,这突出了其能力的潜在弱点和在这个领域需要集中改进.
+
+summary: 尽管在SQL生成方面表现不佳，但在数学任务方面的熟练程度表明可能更倾向于解决数学问题。相反，ChatGLM在数学代码生成方面表现不佳，突显出其能力的一个潜在弱点，需要在这个领域进行有针对性的改进。
+Overall, these results underscore the task-dependent nature of LLMs' capabilities and highlight the importance of recognizing their individual strengths and weaknesses for optimal model guidance and enhanced problem-solving.
+
+translate: 总的来说,这些结果强调了法学硕士的能力的任务依赖性,并强调了承认他们个人优势和弱点的重要性,以获得最佳的模型指导和增强解决问题的能力.
+
+summary: 总之，这些结果强调了任务依赖性对大型语言模型能力的意义，并强调了认识到它们的个体优势和劣势以实现最佳模型指导和增强问题解决能力的重要性。
+
+#### 3.3.2 Tptu-Oa and Tptu-Sa: Tool Usage for Multiple Tools
+
+We now aim to utilize the one-step agent and sequential agent, which we designed, to conduct an evaluation involving multiple tools. Corresponding prompts for each agent type have been crafted and are presented in Figure 16 and Figure 17 of Appendix B, respectively.
+
+translate: 我们现在的目标是利用我们设计的一步代理和顺序代理,进行涉及多个工具的评估. 为每个代理类型制定了相应的提示,分别在附录B的图16和图17中展示.
+
+summary: 我们现在计划利用我们设计的单步代理和序贯代理来进行涉及多款工具的评估。对应的提示分别已编写并呈现在附录B中的图16和图17中。
+In this phase of the evaluation, we need to automatically invoke the respective tools through code and produce the results. Given that user interface-based LLMs lack the capability to call external tools, we will only utilize the following four API-based LLMs (ChatGPT, Ziya, Chinese-Alpaca, and InternLM) for this comprehensive evaluation of external tool usage ability.
+
+translate: 在评估的这个阶段,我们需要通过代码自动调用相应的工具并产生结果. 鉴于基于用户界面的 LLM 缺乏调用外部工具的能力,我们只会使用以下四个基于 API 的 LLM (ChatGPT,Ziya,Chinese-Alpaca 和 InternLM) 来全面评估外部工具的使用能力.
+
+summary: 在这个评估阶段，我们需要通过代码自动调用相应的工具来产生结果。由于基于用户界面的大语言模型缺乏调用外部工具的能力，我们将仅使用以下四种API大语言模型(ChatGPT、Ziya、Chinese-Alpaca和InternLM)进行对外部工具使用能力的全面评估。
+With agents mentioned above, the final results are presented in Table 11. The evaluation results demonstrate varying levels of task planning and tool usage capabilities among the four API-based LLMs. In the TPTU-OA evaluation, ChatGPT achieved a performance rate of 50%, significantly outperforming the other models, with InternLM at 15%, while both Ziya and Chinese-Alpaca did not manage to complete any tasks successfully, resulting in a score of 0%. In the TPTU-SA evaluation, an overall slight improvement was observed. ChatGPT maintained its leading position, with a slightly improved performance rate of 55%. InternLM also exhibited better performance, achieving a score of 20%, whereas Ziya and Chinese-Alpaca-Plus again failed to register any successful task completion.
+
+translate: 在 TPTU-OA 评估中,ChatGPT 实现了 50% 的性能,明显优于其他模型,InternLM 达到 15%,而 Ziya 和 Chinese-Alpaca 都未能成功完成任何任务,因此得分为 0%. 在 TPTU-SA 评估中,总体上略有改善. ChatGPT 保持了领先地位,性能率略有提高 55%. InternLM 也表现出更好的性能,达到 20% 的得分,而 Ziya 和 Chinese-Alpaca-Plus 再次未能成功完成任何任务.
+
+summary: 在上述提到的代理中，最终结果如表11所示。评估结果表明，四种基于API的预训练语言模型在任务规划和工具使用能力方面存在差异。在TPTU-OA评估中，ChatGPT的表现率为50%，明显优于其他模型(InternLM为15%)，而Ziya和Chinese-Alpaca均未能成功完成任何任务，得分均为0%。在TPTU-SA评估中，整体表现略有改善。ChatGPT保持领先地位，表现率为55%，而InternLM也有所提高，达到20%，但Ziya和Chinese-Alpaca-Plus再次未能记录到任何成功的任务完成。
+These results reflect a notable discrepancy in the performance of LLMs when it comes to using external tools. ChatGPT and InternLM have demonstrated some ability to navigate these tasks, but their performance rates suggest there is significant room for improvement. Ziya and Chinese-Alpaca-Plus' performance indicates a struggle to effectively utilize external tools in their current state.
+
+translate: 这些结果反映了LLM在使用外部工具时表现的显著差异.ChatGPT和InternLM已经展示了一些导航这些任务的能力,但他们的性能率表明还有很大的改进空间.Ziya和Chinese-Alpaca-Plus的表现表明他们在当前状态下难以有效地使用外部工具.
+
+summary: 这些结果反映了在使用外部工具方面，大型语言模型(LLM)的表现存在显著差异。ChatGPT和InternLM在这类任务中展示了一些能力，但它们的表现率表明仍有很大的改进空间。Ziya和Chinese-Alpaca-Plus的表现则显示出它们目前在有效利用外部工具方面面临困难。
+The differential performance between the TPTU-OA and TPTU-SA evaluation hints at the possible impact of the agent design on the LLMs' task execution ability. In particular, the performance increase under the sequential agent framework suggests that breaking down tasks into sequential steps might help LLM-based AI agents better utilize external tools. This insight could prove valuable in future improvements and developments of LLM-based AI agents. However, even with this approach, it is clear that LLM-based AI agents are far from perfect when it comes to effectively using external tools for complex tasks. This finding underlines the importance of further investigation and improvement in this domain.
+
+translate: TPTU-OA 和 TPTU-SA 评估之间的差别性能暗示了代理设计对 LLM 任务执行能力的可能影响. 特别是,在顺序代理框架下的性能提高表明,将任务分解为顺序步骤可能会帮助 LLM 基于 AI 代理更好地利用外部工具. 这种见解可能对 LLM 基于 AI 代理的未来改进和发展有价值. 然而,即使采用这种方法,很明显,LLM 基于 AI 代理在有效使用外部工具来执行复杂任务时远远不完美. 这一发现强调了在此领域进一步调查和改进的重要性.
+
+summary: 不同TPTU-OA和TPTU-SA评估的表现差异可能表明了代理设计对AI模型任务执行能力的影响。特别是，在顺序代理框架下的性能提高表明，将任务分解为序列步骤可能会帮助基于LLM的AI代理更好地利用外部工具。这一见解在未来改进和发展基于LLM的AI代理方面可能非常有价值。然而，即使采用了这种方法，当涉及到有效地使用外部工具来处理复杂任务时，基于LLM的AI代理仍然远远不够完美。这一发现强调了在这个领域进行进一步研究和改进的重要性。
+\begin{table}\begin{tabular}{c c c c} \hline \hline**Model** & ChatGPT & Claude & Ziya \\ \cline{2-4}**Accuracy** & 90\% & 85\% & 50\% \\ \hline**Model** & ChatGLM & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**Accuracy** & 0\% & 55\% & 95\% \\ \hline \hline \end{tabular}\end{table}Table 10: The evaluation results for mathematical questions.
+
+translate: 表10:数学问题的评估结果.
+
+summary: 根据表格，我们可以得出以下结论：在回答数学问题方面，ChatGPT的准确率为90%，Claude为85%，Ziya为50%。而ChatGLM和Chinese-Alpaca-Plus的表现较差，前者完全无法回答这类问题，后者的准确率仅为55%。
+\begin{table}\begin{tabular}{c c c c c} \hline \hline**Model** & ChatGPT & Ziya & Chinese-Alpaca-Plus & InternLM \\ \cline{2-4}**TPTU-OA** & 50\% & 0\% & 0\% & 15\% \\**TPTU-SA** & 55\% & 0\% & 0\% & 20\% \\ \hline \hline \end{tabular}\end{table}Table 11: The evaluation results for end-to-end ability of multiple tools.
+
+translate: 表11:多个工具的端到端能力的评估结果.
+
+summary: 根据提供的表格，我们可以得出以下总结：
+
+在这个表格中，我们比较了四个不同的模型(ChatGPT、Ziya、Chinese-Alpaca-Plus 和 InternLM)在端到端能力方面的表现。这些模型被用于处理一种特定的任务，即评估它们在处理特定类型的文本时是否具有良好的理解和生成能力。
+
+表11显示，对于端到端能力的评估，TPTU-OA(Transformer Pre-training with Universal Objectives)方法的准确率最高，达到了50%。然而，值得注意的是，这个方法在这四种模型中的表现并不一致，有些模型的表现甚至为零。同样地，TPTU-SA(Self-Attention)方法的准确率也相对较高，达到55%，但仍然存在一些问题。
+
+总之，虽然这些模型在端到端能力方面取得了一定的成果，但在实际应用中仍需进一步改进和优化。
+
+### Insightful Observations
+
+Upon closer observation of our experimental results, we have identified several phenomena that deserved further exploration. These findings serve to broaden our understanding of LLM-based agents' behavior and capabilities and provide essential insights that could shape future research in this field. In the following, we will dissect these phenomena as shown in Figure 3 - 6, casting light on the weaknesses of LLM-based agents in the context of task planning and tool usage.
+
+translate: 在仔细观察我们的实验结果后,我们发现了几个值得进一步探索的现象.这些发现有助于扩大我们对基于LLM的代理行为和能力的理解,并提供可能塑造该领域未来研究的基本见解.在下文中,我们将分析这些现象,如图3-6所示,阐明基于LLM的代理在任务规划和工具使用方面的弱点.
+
+summary: 在对实验结果进行更仔细的观察后，我们发现了一些值得进一步研究的现象。这些发现有助于拓宽我们对基于LLM(语言模型)的代理行为和能力的理解，并为塑造该领域未来研究提供了宝贵的见解。以下，我们将详细分析图3至6中所示的现象，揭示任务规划和工具使用背景下基于LLM的代理的弱点。
+1. **Misunderstanding Output Formats**: LLMs frequently encounter difficulty when output is required in specific formats such as lists or dictionaries. One such example includes inconsistencies between the number of tools and corresponding subtasks, leading to formatting issues that hinder the correct execution of tasks.2. **Struggling to Grasp Task Requirements**: LLMs might incorrectly disintegrate subproblems or apply unsuitable tools to carry out the subproblem. For example, an LLM might attempt to solve a purely mathematical problem by employing an SQL tool or could misunderstand similar terms like cube extraction and cube roots.3. **Endless Extensions**: LLMs tend to overutilize a particular tool, even in instances where a single use would suffice for the correct result. This issue can lead to extended and nonsensical planning, where the same subtask is repeatedly solved.4. **Lack of Summary Skills**: LLMs do not take into account the responses to subproblems, relying instead on their internalized knowledge to generate the final answer. This may lead to a scenario where the final response only addresses a portion of the original query.
+
+translate: 1. **误解输出格式**: LLM 经常遇到困难,例如, LLM 可能试图通过使用 SQL 工具来解决纯数学问题,或可能误解类似的术语,如立方体提取和立方体根.3. **无限扩展**: LLM 倾向于过度使用特定工具,即使在使用一次就足以获得正确的结果的情况下.
+
+summary: 1. **误解输出格式**：LLM(大型语言模型)在需要以特定格式(如列表或字典)输出时经常遇到困难。例如，工具和子任务的数量不一致导致格式问题，从而影响任务的正确执行。
+2. **难以理解任务要求**：LLM可能会错误地分解子问题或使用不合适的工具来解决子问题。例如，一个LLM可能会尝试用SQL工具解决一个纯粹的数学问题，或者可能误解诸如立方提取和立方根等类似术语。
+3. **无尽的扩展**：LLM倾向于过度使用某个工具，即使一次使用就足以得到正确的结果。这个问题可能导致冗长且无意义的规划，同一个子任务被反复解决。
+4. **缺乏摘要技能**：LLM没有考虑到子问题的答案，而是依赖其内部知识生成最终答案。这可能导致最终回应仅解决了原始查询的一部分。
+By identifying and addressing these common issues, we stand a better chance at improving and refining LLMs, thereby unlocking their full potential.
+
+translate: 通过确定和解决这些共同问题,我们有更好的机会改进和完善法学硕士,从而充分发挥其潜力.
+
+summary: 通过识别和解决这些常见问题，我们更有可能提高和完善语言模型，从而充分发挥它们的潜力。
+Figure 4: Solve a purely mathematical problem by employing a SQL generator.
+
+translate: 图4:使用SQL生成器解决一个纯粹的数学问题.
+
+summary: 图4：通过使用SQL生成器来解决一个纯粹的数学问题。
+Figure 3: Inconsistencies between the number of tools and corresponding subtasks.
+
+translate: 图3:工具数量和相应的子任务之间的不一致.
+
+summary: 图3显示了工具数量与相应子任务之间存在的不一致。
+
+## 4 Related Work
+
+The remarkable capacity for usage and creation of tools have facilitated the transcendence of our innate physical and cognitive constraints, thereby profoundly advancing the progress and prosperity of human civilization and society. The swift advancement of LLM has rendered it feasible to use and create tools like humans. The integration of specialized tools with LLM has unlocked substantial potential in addressing intricate tasks. In this section, we offer a concise synopsis of the relevant research pertaining to tool learning based on LLMs.
+
+
+translate: 工具的使用和创造的显著能力促进了我们天生的物理和认知限制的超越,从而大大促进了人类文明和社会的进步和繁荣. LLM的快速发展使得像人类一样使用和创建工具成为可能.
+
+summary: 这段话用中文总结如下：
+
+人类非凡的工具使用和创造能力使我们能够超越固有的生理和认知限制，从而极大地推动了人类文明和社会的进步与繁荣。LLM(语言模型)的迅速发展使得像人类一样使用和创造工具变得可行。将专业工具与LLM相结合，为我们解决复杂任务提供了巨大的潜力。在本节中，我们将简要概述基于LLM的工具学习相关研究。
+### Tool Usage
+
+The initial advancements in tool learning have been constrained by the capabilities of artificial intelligence (AI) models. [21] Traditional deep learning approaches exhibit limitations in terms of comprehension of tool functionality and user intentions, and common sense reasoning abilities. Consequently, these limitations directly result in a notable decline in the stability and precision of tool learning methodologies. Recently, the advent of LLM has marked a pivotal juncture in the realm of tool learning. LLMs encompass a broad spectrum of common sense cognitive capabilities and exhibit remarkable proficiencies in natural language processing, reasoning, and interactive decision-making [22, 23, 24, 25, 26]. These attributes furnish indispensable prerequisites for LLMs to comprehend user intentions and effectively employ tools in tackling intricate tasks [27]. Simultaneously, the advancement of fine-tuning [28, 29, 30, 31, 32] and in-context learning [33, 34] technology has offered robust support to LLM in addressing increasingly intricate challenges. In addition, tool usage can mitigate the inherent limitations of LLMs, encompassing the acquisition of up-to-date information from real-world events, refined mathematical computational abilities, and the mitigation of potential hallucinatory phenomena. [35]
+
+translate: 传统的深度学习方法在理解工具功能和用户意图和互动决策方面存在局限性.因此,这些限制直接导致工具学习方法的稳定性和精度显著下降.最近,LLM的出现标志着工具学习领域的一个关键时刻.LLM涵盖了广泛的常识认知能力,并在自然语言处理,推理和交互决策方面表现出显著的熟练程度.
+
+summary: 初期的工具学习进步受到了人工智能(AI)模型能力的限制。传统的深度学习方法在理解工具功能和用户意图以及常识推理能力方面存在局限性，这直接导致了工具学习方法的稳定性和精度显著下降。最近，LLM的出现标志着工具学习领域的一个重要转折点。LLM涵盖了一系列常识认知能力，并在自然语言处理、推理和互动决策方面表现出卓越的能力[22, 23, 24, 25, 26]。这些特质为LLM理解用户意图并有效地使用工具解决复杂任务提供了必不可少的条件[27]。同时，细调技术(28, 29, 30, 31, 32)和上下文学习(33, 34)的发展为LLM应对越来越复杂的挑战提供了有力的支持。此外，工具的使用可以弥补LLM固有的局限性，包括从现实世界事件中获取最新信息、改进数学计算能力以及减轻潜在的幻觉现象[35]。
+Within the realm of embodied intelligence [36, 37, 38], LLM engages in direct interactions with tangible tools like robots in order to enhance their cognitive abilities, optimize work productivity, and expand functional capacities. LLM possesses the capability to automatically devise action steps based on user intentions, enabling the guidance of robots in the completion of tasks [39, 40, 41, 42, 43, 44, 45, 46, 47], or alternatively,
+
+translate: 在体现的智能领域 [36,37,38],LLM 与机器人等有形工具进行直接互动,以提高他们的认知能力,优化工作生产力,并扩大功能能力.LLM 拥有自动设计基于用户意图的行动步骤的能力,使机器人能够在完成任务时得到指导 [39,40,41,42,43,44,45,46,47],或者,
+
+summary: 在具身智能领域[36，37，38]中，LLM通过与机器人等实物工具进行直接互动来增强它们的认知能力、优化工作效率并扩展功能。LLM具有根据用户意图自动制定行动步骤的能力，使机器人在完成任务时得到指导[39，40，41，42，43，44，45，46，47]，或者也可以是其他方式。
+Figure 5: Unnecessary repetition of subtasks.
+
+translate: 图5:次级任务的不必要的重复.
+
+summary: 图5展示了不必要的子任务重复。
+Figure 6: Answering questions using common sense instead of generating code.
+
+translate: 图6:使用常识而不是生成代码来回答问题.
+
+summary: 图6：使用常识回答问题而不是生成代码。
+to directly generate underlying code that can be executed by robots [48; 49; 50; 51; 52]. Palm-E [44] introduced a multimodal language model which seamlessly integrates sensor data into its framework, enabling efficient planning of robot actions and task completion. Code as Policies (CaP) [52] facilitates the transformation of natural language instructions into code fragments that can be directly compiled and executed on robots. As for Inner Monologue [42], LLM incorporates diverse environmental feedback to construct inner monologues, thereby formulating effective robot control strategies. Furthermore, LP-SLAM [39] proposes a simultaneous localization and mapping (SLAM) system empowered with language perception capabilities, exploiting the potential of ChatGPT. PromptCraft [51], on the other hand, devises a function library tailored to ChatGPT on the robot platform, streamlining the conversion of user intentions into executable tasks via the underlying backend API.
+
+translate: 直接生成由机器人执行的底层代码 [48; 49; 50; 51; 52]. Palm-E [44] 引入了一个多模式语言模型,可以无缝地将传感器数据集成到其框架中,从而实现机器人行动和任务完成的有效规划. Code as Policies (CaP) [52] 促进自然语言指令转换为可以在机器人上直接编译和执行的代码片段. 至于Inner Monologue [42],LLM 整合了各种环境反馈来构建内部独白,从而制定有效的机器人控制策略. 此外,LP-SLAM [39] 提出了一个同时本地化和映射 (SLAM) 系统,具有语言感知能力,利用ChatGPT的潜力.
+
+summary: 这段话主要介绍了一些研究和技术，它们可以将自然语言转换为可以直接由机器人执行的底层代码。Palm-E引入了一种多模态语言模型，可以将传感器数据无缝集成到其框架中，从而实现高效的机器人动作规划和任务完成。Code as Policies(CaP)使得自然语言指令能够直接转化为可以在机器人上编译和执行的代码片段。Inner Monologue则利用了环境反馈来构建内心独白，从而制定有效的机器人控制策略。此外，LP-SLAM提出了一种结合语言感知能力的同步定位与地图构建系统，利用ChatGPT的潜力。最后，PromptCraft为机器人平台设计了一个针对ChatGPT的功能库，通过底层API简化了将用户意图转换为可执行任务的过程。
+In addition to directly changing the real environment through interaction with tools in the physical world, LLM can also utilize software tools such as search engines [53; 54; 55; 56; 57; 58; 59; 60; 61], mobile [62; 63], Microsoft Office [64; 65], calculators [66; 67; 68], deep models [69; 70; 71; 72; 73; 74; 75; 76] and other versatile APIs [77; 78; 79; 80; 14; 81] to enhance model performance or complete complex workflows through flexible control of the software. Toolformer [78] employs a self-supervised methodology to fine-tune the language model, enabling it to acquire the ability to automatically invoke APIs. ART [82] leverages CoT [20] and In-context Learning [76; 35] techniques to automatically generate multi-step reasoning processes for new tasks, while also selecting and utilizing the most appropriate available tool at each step. ASH [56] utilizes LLM for sequence hierarchical decision-making to achieve web navigation tasks. WebGPT [60] and WebCPM [58] use network search to assist in implementing Question Answering tasks. In addition, RCI [83] recursively criticizes and improves itself to execute computer tasks guided by natural language according to the prompting scheme. To achieve the analysis and processing of tables, TableGPT [65] employs a table encoder to transform tabular data into vector representations, which are then fed into an LLM for inference in combination with user queries.
+
+translate: 除了通过与物理世界工具的交互来直接改变真实环境外,LLM还可以利用软件工具,如搜索引擎[53; 54; 55; 56; 57; 58; 59; 60; 61],移动[62; 63],微软Office[64; 65],计算器[66; 67; 68],深度模型[69; 70; 71; 72; 73; 74; 75; 76]和其他多功能的API[77; 78; 79; 80; 14; 81],通过灵活的软件控制来提高模型的性能或完成复杂的工作流程.Toolformer [78]使用自我监督的方法来微调语言模型,使其能够自动调用API.LLM利用CoT [20]和In-context Learning [76; 35]技术自动生成为新任务的多步骤推理过程,同时利用每个用户最合适的层次搜索程序.RGPT还利用RGPH88.
+
+summary: LLM(语言模型)不仅可以通过与物理世界的工具互动来直接改变现实环境，还可以利用搜索引擎、移动设备、Microsoft Office、计算器等软件工具来提高模型性能或通过灵活控制软件来完成复杂工作流程。例如，Toolformer采用自监督方法对语言模型进行微调，使其能够自动调用API。ART结合CoT和In-context Learning技术，自动为新任务生成多步推理过程，并在每个步骤中选择并使用最合适的可用工具。ASH利用LLM实现序列层次决策以执行网页导航任务。WebGPT和WebCPM使用网络搜索协助实施问答任务。此外，RCI递归地批评和改进自己，根据提示方案指导自然语言分析和处理计算机任务。为了实现表格的分析和处理，TableGPT使用表编码将表格数据转换为向量表示，然后将其输入到LLM中，结合用户查询进行推理。
+
+### Tool Creation
+
+The usage of tools is contingent upon the accessibility of external tools. Recently, efforts have been made to employ LLM as a tool creator in order to generate tools that can be utilized for diverse requests [84; 85; 86; 87; 88; 89; 90; 91]. This development has consequently raised the demands placed on LLM. And these created tools are typically implemented as Python or SQL functions. LATM [84], for example, leverages the prowess of GPT-4 to create tools, and the usage of more cost-effective models has shown potential in exhibiting performance on par with larger models for these tool applications. EVAPORATE [90] involves the synthesis of multiple functions, which are subsequently utilized at a large scale to efficiently process documents and generate structured views.
+
+
+translate: 工具的使用取决于外部工具的可访问性.最近,人们努力将 LLM 作为工具创造者来生成可以用于各种请求的工具[84;85;86;87;88;89;90;91].这种发展因此增加了对 LLM 的需求.这些创建的工具通常以Python或SQL函数的形式实现.例如,LATM [84]利用GPT-4的实力来创建工具,并且使用更具成本效益的模型显示了与这些工具应用程序的大型模型相媲美的性能潜力.EVAPORATE [90]涉及多个函数的合成,这些函数随后被大规模地用于高效处理文档和生成结构化视图.
+
+summary: 这段话讨论了工具使用依赖于外部工具的可用性。最近，研究人员试图利用LLM(预训练语言模型)作为工具创建者，以生成可用于各种需求的工具[84, 85, 86, 87, 88, 89, 90, 91]。这一发展使得对LLM的要求变得更高。这些生成的工具通常被实现为Python或SQL函数。例如，LATM[84]利用GPT-4的能力来创建工具，而使用更经济高效的模型在这些工具应用中展示出与更大模型相当的表现潜力。EVAPORATE[90]涉及合成多个功能，然后在大规模上用于高效处理文档并生成结构化视图。
+## 5 Conclusion
+
+In this paper, we have introduced a structured framework specially designed for LLM-based AI Agents, with an emphasis on their abilities in task planning and tool usage. This framework, coupled with our design of two distinct types of agents assigned for the inference process, allows for a comprehensive evaluation of the capabilities of current open-source LLMs, thereby yielding critical insights into their effectiveness. Furthermore, our research highlights the significant potential of LLMs in managing complex tasks, revealing the exciting prospects they hold for future research and development. As we continue to explore and improve upon these models, we move closer to unlocking their full potential in a wide range of real-world applications.
+
+
+translate: 在本文中,我们介绍了一个专门为基于 LLM 的 AI 代理设计的结构化框架,重点是它们在任务规划和工具使用方面的能力.这个框架,加上我们为推断过程分配的两种不同类型的代理,允许对当前开源 LLM 的能力进行全面评估,从而对它们的有效性产生关键的见解.此外,我们的研究强调了 LLM 在管理复杂任务方面的巨大潜力,揭示了它们对未来研究和开发的令人兴奋的前景.
+
+summary: 在本文中，我们介绍了一种专门为基于LLM的AI代理设计的结构化框架，强调了它们在任务规划和工具使用方面的能力。这个框架与我们在推理过程中设计了两种不同类型的代理相结合，使得我们可以全面评估当前开源LLM的能力，从而得出关于其有效性的关键见解。此外，我们的研究突显了LLM在管理复杂任务方面的重要潜力，揭示了它们在未来研究和开发中的令人兴奋的前景。随着我们继续探索和改进这些模型，我们将更接近解锁它们在各种现实世界应用中的全部潜能。
+## Acknowledgements
+
+This work was conducted collaboratively among the authors.
+
+translate: 这项工作是在作者之间合作进行的.
+
+summary: 这项工作是由作者们共同合作进行的。
+Hangyu Mao and Rui Zhao led the project, formulating the central idea and laying out the framework for the primary literature review.
+
+translate: 杭<unk>毛和鲁<unk>领导了该项目,制定了核心想法并制定了初级文献审查的框架.
+
+summary: 毛汉宇和赵瑞领导了这个项目，提出了核心观点并制定了主要文献回顾的基本框架。
+Regarding the literature review phase, the surveys were conducted by various team members. Guoqing Du and Jingqing Ruan explored DNN-based Tool Scheduling by LLMs; Tianpeng Bao and Yihong Chen investigated Physical/Robot Tool Scheduling by LLMs; and Shiwei Shi and Zhiwei Xu handled the survey of API or GUI-based Tool Scheduling by LLMs. Bin Zhang summarized these papers and synthesized an overarching summary.
+
+translate: 关于文献审查阶段,调查由不同的团队成员进行. Guoqing Du 和 Jingqing Ruan 探索了 LLMs 基于 DNN 的工具调度; Tianpeng Bao 和 Yihong Chen 调查了 LLMs 的物理/机器人工具调度;而 Shiwei Shi 和 Zhiwei Xu 处理了 LLMs 基于 API 或 GUI 的工具调度调查.
+
+summary: 关于文献综述阶段，这些调查是由团队的不同成员进行的。郭秋庆杜和景清如研究了基于LLM的DNN工具调度;田鹏宝和易洪辰研究了基于LLM的物理/机器人工具调度;石伟石和习卫华负责调查基于LLM的API或GUI工具调度。张彬对这些论文进行了总结，并综合概括了整体情况。
+As for the evaluation phase, Yihong Chen, Tianpeng Bao, Jingqing Ruan, Guoqing Du, Zhiwei Xu, Shiwei Shi, and Bin Zhang performed the experiments and analyzed the data. Hangyu Mao assisted in the analysis of the experimental phenomena and offered constructive suggestions for improvements. Xingyu Zeng and Rui Zhao provided invaluable feedback, contributed to the direction of the research. All authors participated in the discussion.
+
+translate: 在评估阶段,Yihong Chen,Tianpeng Bao,Jingqing Ruan,Guoqing Du,Zhiwei Xu,Shiwei Shi和Bin Zhang进行了实验并分析了数据.Hangyu Mao协助分析了实验现象,并为改进提供了建设性的建议.Xingyu Zeng和Rui Zhao提供了宝贵的反馈,为研究方向做出了贡献.所有作者都参加了讨论.
+
+summary: 在评估阶段，陈一红、包天鹏、阮静庆、杜国强、徐志伟、石伟、张彬进行了实验并分析了数据。毛航宇协助分析实验现象，为改进提供了建设性建议。曾星宇和赵瑞提供了宝贵的反馈，对研究方向做出了贡献。所有作者都参与了讨论。
+Regarding the manuscript phase, Hangyu Mao organized the overall chapters of the manuscript and mainly wrote the methodology part, and provided assistance in other parts. Jingqing Ruan and Yihong Chen wrote the evaluation section. Bin Zhang wrote the summary of the literature review. Each author read and approved the final manuscript.
+
+translate: 关于手稿阶段,杭宇毛组织了手稿的整体章节,主要写了方法部分,并在其他部分提供协助. Jingqing Ruan 和 Yihong Chen 写了评估部分. Bin Zhang 写了文献回顾的摘要. 每个作者阅读并批准了最终手稿.
+
+summary: 关于手稿阶段，毛汉宇负责组织整个手稿的章节并主要撰写方法部分，并在其他部分提供了帮助。阮静青和陈一红撰写了评估部分。张彬撰写了文献综述的摘要。每位作者都阅读并批准了最终手稿。
+The authors would like to thank Feng Zhu, Ziyue Li, Kun Wang, Yuhang Ran, Mengying Xu, Pengfei Jia, and Shaobo Lin for their valuable feedback, discussion, and participation in this project.
+
+translate: 作者希望感谢<unk>朱,Ziyue Li,Kun Wang,Yuhang Ran,Mengying Xu,Pengfei Jia和Shaobo Lin对这个项目的宝贵反馈,讨论和参与.
+
+summary: 作者们想感谢冯卓、李子悦、王昆、冉昱航、徐梦英、贾鹏飞和林绍柏为这个项目提供的宝贵反馈、讨论和参与。
+
+## References
+
+* [1] W. X. Zhao, K. Zhou, J. Li, T. Tang, X. Wang, Y. Hou, Y. Min, B. Zhang, J. Zhang, Z. Dong _et al._, "A survey of large language models," _arXiv preprint arXiv:2303.18223_, 2023.* [2] T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry, A. Askell _et al._, "Language models are few-shot learners," _Advances in neural information processing systems_, vol. 33, pp. 1877-1901, 2020.* [3] J. Wei, M. Bosma, V. Y. Zhao, K. Guu, A. W. Yu, B. Lester, N. Du, A. M. Dai, and Q. V. Le, "Finetuned language models are zero-shot learners," _arXiv preprint arXiv:2109.01652_, 2021.* [4] N. R. Jennings, K. Sycara, and M. Wooldridge, "A roadmap of agent research and development," _Autonomous agents and multi-agent systems_, vol. 1, pp. 7-38, 1998.* [5] N. R. Jennings and M. Wooldridge, "Applying agent technology," _Applied Artificial Intelligence an International Journal_, vol. 9, no. 4, pp. 357-369, 1995.* [6] S. Franklin and A. Graesser, "Is it an agent, or just a program?: A taxonomy for autonomous agents," in _International workshop on agent theories, architectures, and languages_. Springer, 1996, pp. 21-35.* [7] C. Castellranchi, "Modelling social action for ai agents," _Artificial intelligence_, vol. 103, no. 1-2, pp. 157-182, 1998.* [8] J. Ferber and G. Weiss, _Multi-agent systems: an introduction to distributed artificial intelligence_. Addison-wesley Reading, 1999, vol. 1.* [9] L. Panait and S. Luke, "Cooperative multi-agent learning: The state of the art," _Autonomous agents and multi-agent systems_, vol. 11, pp. 387-434, 2005.* [10] Q. Xu, F. Hong, B. Li, C. Hu, Z. Chen, and J. Zhang, "On the tool manipulation capability of open-source large language models," _arXiv preprint arXiv:2305.16504_, 2023.* [11] Y. Qin, S. Liang, Y. Ye, K. Zhu, L. Yan, Y. Lu, Y. Lin, X. Cong, X. Tang, B. Qian _et al._, "Toolllm: Facilitating large language models to master 16000+ real-world apis," _arXiv preprint arXiv:2307.16789_, 2023.* [12] M. Li, F. Song, B. Yu, H. Yu, Z. Li, F. Huang, and Y. Li, "Api-bank: A benchmark for tool-augmented llms," _arXiv preprint arXiv:2304.08244_, 2023.* [13] S. G. Patil, T. Zhang, X. Wang, and J. E. Gonzalez, "Gorilla: Large language model connected with massive apis," _arXiv preprint arXiv:2305.15334_, 2023.* [14] Q. Tang, Z. Deng, H. Lin, X. Han, Q. Liang, and L. Sun, "Toolapaca: Generalized tool learning for language models with 3000 simulated cases," _arXiv preprint arXiv:2306.05301_, 2023.
+
+translate: [1] W. X. Zhao, K. Zhou, J. Li, T. Tang, X. Wang, Y. Hou, Y. Min, B. Zhang, J. Zhang, Z. Dong _et al._, "A survey of large language models", _arXiv preprint arXiv:2303.18223_, 2023.* T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sasuton, A. Askell _et al._, "Language models are few multi-shot learners," _Advances in General information processing systems_, 1877-33, pp. 1901, 2020.* [3] J. Wei, M. Bosma, V. Y. Zhao, W. G., A. B. ai, A. A. A., A. A. A. A., A. A. A. A., A. A. A. A. Yu, A. A. A. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y.
+
+summary: 这段话主要介绍了关于大型语言模型的研究进展。首先，W. X. Zhao等人发表了一篇综述文章，讨论了大型语言模型的现状和挑战。接着，T. Brown等人在一篇论文中提出，大型语言模型可以进行少量学习任务，即“few-shot learners”。此外，J. Wei等人发现，经过微调的大型语言模型具有零射学习能力。N. R. Jennings等人提出了一个用于研究智能代理发展路线图的方法。最后，作者列举了一些近期关于大型语言模型与工具结合的研究成果，如ToolLLM、API-Bank等。
+* [15] L. Ouyang, J. Wu, X. Jiang, D. Almeida, C. Wainwright, P. Mishkin, C. Zhang, S. Agarwal, K. Slama, A. Ray _et al._, "Training language models to follow instructions with human feedback," _Advances in Neural Information Processing Systems_, vol. 35, pp. 27 730-27 744, 2022.* [16] Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon _et al._, "Constitutional ai: Harmlessness from ai feedback," _arXiv preprint arXiv:2212.08073_, 2022.* [17] A. Zeng, X. Liu, Z. Du, Z. Wang, H. Lai, M. Ding, Z. Yang, Y. Xu, W. Zheng, X. Xia _et al._, "Glm-130b: An open bilingual pre-trained model," _arXiv preprint arXiv:2210.02414_, 2022.* [18] H. Touvron, T. Lavril, G. Izacard, X. Martinet, M.-A. Lachaux, T. Lacroix, B. Roziere, N. Goyal, E. Hambro, F. Azhar _et al._, "Llama: Open and efficient foundation language models," _arXiv preprint arXiv:2302.13971_, 2023.* [19] Y. Cui, Z. Yang, and X. Yao, "Efficient and effective text encoding for chinese llama and alpaca," _arXiv preprint arXiv:2304.08177_, 2023.* [20] J. Wei, X. Wang, D. Schuurmans, M. Bosma, B. Ichter, F. Xia, E. H. Chi, Q. V. Le, and D. Zhou, "Chain-of-thought prompting elicits reasoning in large language models," _Neural Information Processing Systems_, 2022.* [21] R. Bommasani, D. A. Hudson, E. Adeli, R. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill _et al._, "On the opportunities and risks of foundation models," _arXiv preprint arXiv:2108.07258_, 2021.* [22] M. Mosbach, T. Pimentel, S. Ravfogel, D. Klakow, and Y. Elazar, "Few-shot fine-tuning vs. in-context learning: A fair comparison and evaluation," _arXiv preprint arXiv:2305.16938_, 2023.* [23] J. Yang, H. Jin, R. Tang, X. Han, Q. Feng, H. Jiang, B. Yin, and X. Hu, "Harnessing the power of llms in practice: A survey on chatgpt and beyond," _arXiv preprint arXiv:2304.13712_, 2023.* [24] C. Zhang, C. Zhang, C. Li, Y. Qiao, S. Zheng, S. K. Dam, M. Zhang, J. U. Kim, S. T. Kim, J. Choi _et al._, "One small step for generative ai, one giant leap for agi: A complete survey on chatgpt in aige era," _arXiv preprint arXiv:2304.06488_, 2023.* [25] F. Yu, H. Zhang, and B. Wang, "Nature language reasoning, a survey," _arXiv preprint arXiv:2303.14725_, 2023.* [26] Z. Wang, G. Zhang, K. Yang, N. Shi, W. Zhou, S. Hao, G. Xiong, Y. Li, M. Y. Sim, X. Chen _et al._, "Interactive natural language processing," _arXiv preprint arXiv:2305.13246_, 2023.* [27] Y. Qin, S. Hu, Y. Lin, W. Chen, N. Ding, G. Cui, Z. Zeng, Y. Huang, C. Xiao, C. Han _et al._, "Tool learning with foundation models," _arXiv preprint arXiv:2304.08354_, 2023.* [28] W. Yu, C. Zhu, Z. Li, Z. Hu, Q. Wang, H. Ji, and M. Jiang, "A survey of knowledge-enhanced text generation," _ACM Computing Surveys_, vol. 54, no. 11s, pp. 1-38, 2022.* [29] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen, "Lora: Low-rank adaptation of large language models," _arXiv preprint arXiv:2106.09685_, 2021.* [30] N. Houlsby, A. Giurgiu, S. Jastrzebski, B. Morrone, Q. De Laroussilhe, A. Gesmundo, M. Attariyan, and S. Gelly, "Parameter-efficient transfer learning for nlp," in _International Conference on Machine Learning_. PMLR, 2019, pp. 2790-2799.* [31] X. L. Li and P. Liang, "Prefix-tuning: Optimizing continuous prompts for generation," _arXiv preprint arXiv:2101.00190_, 2021.* [32] X. Liu, Y. Zheng, Z. Du, M. Ding, Y. Qian, Z. Yang, and J. Tang, "Gpt understands, too," _arXiv preprint arXiv:2103.10385_, 2021.* [33] S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao, "React: Synergizing reasoning and acting in language models," _arXiv preprint arXiv:2210.03629_, 2022.
+
+summary: 这段文字主要介绍了关于自然语言处理(NLP)领域的一些最新研究成果。这些研究涉及到不同类型的预训练模型，如LLAMA、ALPACA和GPT系列等。此外，还讨论了如何利用这些模型进行参数优化、低秩适应以及在特定任务中提高性能的方法。同时，也提到了一些新的技术，如反应式学习和协同推理，以帮助模型更好地理解和解决复杂问题。
+* [34] T. Khot, H. Trivedi, M. Finlayson, Y. Fu, K. Richardson, P. Clark, and A. Sabharwal, "Decomposed prompting: A modular approach for solving complex tasks," _arXiv preprint arXiv:2210.02406_, 2022.* [35] G. Mialon, R. Dessi, M. Lomeli, C. Nalmparantis, R. Pasunuru, R. Raileanu, B. Roziere, T. Schick, J. Dwivedi-Yu, A. Celikyilmaz _et al._, "Augmented language models: a survey," _arXiv preprint arXiv:2302.07842_, 2023.* [36] J. Duan, S. Yu, H. L. Tan, H. Zhu, and C. Tan, "A survey of embodied ai: From simulators to research tasks," _IEEE Transactions on Emerging Topics in Computational Intelligence_, vol. 6, no. 2, pp. 230-244, 2022.* [37] M. Savva, A. Kadian, O. Maksymets, Y. Zhao, E. Wijmans, B. Jain, J. Straub, J. Liu, V. Koltun, J. Malik _et al._, "Habitat: A platform for embodied ai research," in _Proceedings of the IEEE/CVF international conference on computer vision_, 2019, pp. 9339-9347.* [38] S. Franklin, "Autonomous agents as embodied ai," _Cybernetics & Systems_, vol. 28, no. 6, pp. 499-520, 1997.* [39] W. Zhang, Y. Guo, L. Niu, P. Li, C. Zhang, Z. Wan, J. Yan, F. U. D. Farrukh, and D. Zhang, "Lp-slam: Language-perceptive rgb-d slam system based on large language model," _arXiv preprint arXiv:2303.10089_, 2023.* [40] D. Shah, B. Osinski, S. Levine _et al._, "Lm-nav: Robotic navigation with large pre-trained models of language, vision, and action," in _Conference on Robot Learning_. PMLR, 2023, pp. 492-504.* [41] A. Brohan, Y. Chebotar, C. Finn, K. Hausman, A. Herzog, D. Ho, J. Ibarz, A. Irpan, E. Jang, R. Julian _et al._, "Do as i can, not as i say: Grounding language in robotic affordances," in _Conference on Robot Learning_. PMLR, 2023, pp. 287-318.* [42] W. Huang, F. Xia, T. Xiao, H. Chan, J. Liang, P. Florence, A. Zeng, J. Tompson, I. Mordatch, Y. Chebotar _et al._, "Inner monologue: Embodied reasoning through planning with language models," _arXiv preprint arXiv:2207.05608_, 2022.* [43] B. Chen, F. Xia, B. Ichter, K. Rao, K. Gopalakrishnan, M. S. Ryoo, A. Stone, and D. Kappler, "Open-vocabulary queryable scene representations for real world planning," in _2023 IEEE International Conference on Robotics and Automation (ICRA)_. IEEE, 2023, pp. 11 509-11 522.* [44] D. Driess, F. Xia, M. S. Sajjadi, C. Lynch, A. Chowdhery, B. Ichter, A. Wahid, J. Tompson, Q. Vuong, T. Yu _et al._, "Palm-e: An embodied multimodal language model," _arXiv preprint arXiv:2303.03378_, 2023.* [45] N. Wake, A. Kanehira, K. Sasabuchi, J. Takamatsu, and K. Ikeuchi, "Chatgpt empowered long-step robot control in various environments: A case application," _arXiv preprint arXiv:2304.03893_, 2023.* [46] K. Rana, J. Haviland, S. Garg, J. Abou-Chakra, I. Reid, and N. Suenderhauf, "Sayplan: Grounding large language models using 3d scene graphs for scalable task planning," _arXiv preprint arXiv:2307.06135_, 2023.* [47] C. H. Song, J. Wu, C. Washington, B. M. Sadler, W.-L. Chao, and Y. Su, "Llm-planner: Few-shot grounded planning for embodied agents with large language models," _arXiv preprint arXiv:2212.04088_, 2022.* [48] A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu _et al._, "Rt-1: Robotics transformer for real-world control at scale," _arXiv preprint arXiv:2212.06817_, 2022.* [49] A. Stone, T. Xiao, Y. Lu, K. Gopalakrishnan, K.-H. Lee, Q. Vuong, P. Wohlhart, B. Zitkovich, F. Xia, C. Finn _et al._, "Open-world object manipulation using pre-trained vision-language models," _arXiv preprint arXiv:2303.00905_, 2023.
+
+summary: 这段文字主要介绍了与Embodied AI(具身人工智能)相关的研究进展。这些进展涉及到多种技术，如预训练语言模型、场景表示、机器人控制等。文章列举了多个相关领域的研究成果，包括T. Khot等人提出的“分解提示”方法、G. Mialon等人关于增强型自然语言处理模型的调查报告、J. Duan等人关于模拟器和任务的研究综述以及M. Savva等人提出的Habitat平台等。此外，还提到了一些具体的应用案例，如D. Shah等人提出的基于大型预训练模型进行导航的方法、B. Chen等人开发的LM-Planner系统等。
+* [50] S. Reed, K. Zolna, E. Parisotto, S. G. Colmenarejo, A. Novikov, G. Barth-Maron, M. Gimenez, Y. Sulsky, J. Kay, J. T. Springenberg _et al._, "A generalist agent," _arXiv preprint arXiv:2205.06175_, 2022.* [51] S. Vemprala, R. Bonatti, A. Bucker, and A. Kapoor, "Chatgpt for robotics: Design principles and model abilities," _Microsoft Auton. Syst. Robot. Res_, vol. 2, p. 20, 2023.* [52] J. Liang, W. Huang, F. Xia, P. Xu, K. Hausman, B. Ichter, P. Florence, and A. Zeng, "Code as policies: Language model programs for embodied control," in _2023 IEEE International Conference on Robotics and Automation (ICRA)_. IEEE, 2023, pp. 9493-9500.* [53] K. Guu, K. Lee, Z. Tung, P. Pasupat, and M. Chang, "Retrieval augmented language model pre-training," in _International conference on machine learning_. PMLR, 2020, pp. 3929-3938.* [54] P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Kuttler, M. Lewis, W.-t. Yih, T. Rocktaschel _et al._, "Retrieval-augmented generation for knowledge-intensive nlp tasks," _Advances in Neural Information Processing Systems_, vol. 33, pp. 9459-9474, 2020.* [55] S. Borgeaud, A. Mensch, J. Hoffmann, T. Cai, E. Rutherford, K. Millican, G. B. Van Den Driessche, J.-B. Lespiau, B. Damoc, A. Clark _et al._, "Improving language models by retrieving from trillions of tokens," in _International conference on machine learning_. PMLR, 2022, pp. 2206-2240.* [56] A. Sridhar, R. Lo, F. F. Xu, H. Zhu, and S. Zhou, "Hierarchical prompting assists large language model on web navigation," _arXiv preprint arXiv:2305.14257_, 2023.* [57] H. Furuta, O. Nachum, K.-H. Lee, Y. Matsuo, S. S. Gu, and I. Gur, "Multimodal web navigation with instruction-finetuned foundation models," _arXiv preprint arXiv:2305.11854_, 2023.* [58] Y. Qin, Z. Cai, D. Jin, L. Yan, S. Liang, K. Zhu, Y. Lin, X. Han, N. Ding, H. Wang _et al._, "Webcpm: Interactive web search for chinese long-form question answering," _arXiv preprint arXiv:2305.06849_, 2023.* [59] S. Yao, H. Chen, J. Yang, and K. Narasimhan, "Webshop: Towards scalable real-world web interaction with grounded language agents," _Advances in Neural Information Processing Systems_, vol. 35, pp. 20 744-20 757, 2022.* [60] R. Nakano, J. Hilton, S. Balaji, J. Wu, L. Ouyang, C. Kim, C. Hesse, S. Jain, V. Kosaraju, W. Saunders _et al._, "Webgpt: Browser-assisted question-answering with human feedback," _arXiv preprint arXiv:2112.09332_, 2021.* [61] Z. Yang, P. Qi, S. Zhang, Y. Bengio, W. W. Cohen, R. Salakhutdinov, and C. D. Manning, "Hotpotqa: A dataset for diverse, explainable multi-hop question answering," _arXiv preprint arXiv:1809.09600_, 2018.* [62] B. Wang, G. Li, and Y. Li, "Enabling conversational interaction with mobile ui using large language models," in _Proceedings of the 2023 CHI Conference on Human Factors in Computing Systems_, 2023, pp. 1-17.* [63] D. Zhang, L. Chen, and K. Yu, "Mobile-env: A universal platform for training and evaluation of mobile interaction," _arXiv preprint arXiv:2305.08144_, 2023.* [64] H. Li, J. Su, Y. Chen, Q. Li, and Z. Zhang, "Sheetcopilot: Bringing software productivity to the next level through large language models," _arXiv preprint arXiv:2305.19308_, 2023.* [65] L. Zha, J. Zhou, L. Li, R. Wang, Q. Huang, S. Yang, J. Yuan, C. Su, X. Li, A. Su _et al._, "Tablegpt: Towards unifying tables, nature language and commands into one gpt," _arXiv preprint arXiv:2307.08674_, 2023.* [66] Z. Chen, K. Zhou, B. Zhang, Z. Gong, W. X. Zhao, and J.-R. Wen, "Chatcot: Tool-augmented chain-of-thought reasoning on\(\backslash\)\(\backslash\)chat-based large language models," _arXiv preprint arXiv:2305.14323_, 2023.* [67] A. Parisi, Y. Zhao, and N. Fiedel, "Talm: Tool augmented language models," _arXiv preprint arXiv:2205.12255_, 2022.
+
+summary: 这段文字主要介绍了与自然语言处理(NLP)相关的研究进展。这些研究涉及到使用大型预训练模型进行知识密集型任务，如问答、对话系统和表格理解等。此外，还讨论了如何利用工具来增强语言模型的能力，以及在移动设备上实现更自然的交互方式。
+* [68] K. Cobbe, V. Kosaraju, M. Bavarian, M. Chen, H. Jun, L. Kaiser, M. Plappert, J. Tworek, J. Hilton, R. Nakano _et al._, "Training verifiers to solve math word problems," _arXiv preprint arXiv:2110.14168_, 2021.* [69] Z. Yang, L. Li, J. Wang, K. Lin, E. Azarnasab, F. Ahmed, Z. Liu, C. Liu, M. Zeng, and L. Wang, "Mm-react: Prompting chatgpt for multimodal reasoning and action," _arXiv preprint arXiv:2303.11381_, 2023.* [70] Z. Liu, Y. He, W. Wang, W. Wang, Y. Wang, S. Chen, Q. Zhang, Y. Yang, Q. Li, J. Yu _et al._, "Internchat: Solving vision-centric tasks by interacting with chatbots beyond language," _arXiv preprint arXiv:2305.05662_, 2023.* [71] Y. Ge, W. Hua, J. Ji, J. Tan, S. Xu, and Y. Zhang, "Openagi: When llm meets domain experts," _arXiv preprint arXiv:2304.04370_, 2023.* [72] Y. Shen, K. Song, X. Tan, D. Li, W. Lu, and Y. Zhuang, "Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface," _arXiv preprint arXiv:2303.17580_, 2023.* [73] D. Suris, S. Menon, and C. Vondrick, "Vipergpt: Visual inference via python execution for reasoning," _arXiv preprint arXiv:2303.08128_, 2023.* [74] C. Wu, S. Yin, W. Qi, X. Wang, Z. Tang, and N. Duan, "Visual chatgpt: Talking, drawing and editing with visual foundation models," _arXiv preprint arXiv:2303.04671_, 2023.* [75] T. Gupta and A. Kembhavi, "Visual programming: Compositional visual reasoning without training," in _Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition_, 2023, pp. 14 953-14 962.* [76] L. Chen, B. Li, S. Shen, J. Yang, C. Li, K. Keutzer, T. Darrell, and Z. Liu, "Language models are visual reasoning coordinators," in _ICLR 2023 Workshop on Mathematical and Empirical Understanding of Foundation Models_, 2023.* [77] P. Lu, B. Peng, H. Cheng, M. Galley, K.-W. Chang, Y. N. Wu, S.-C. Zhu, and J. Gao, "Chameleon: Plug-and-play compositional reasoning with large language models," _arXiv preprint arXiv:2304.09842_, 2023.* [78] T. Schick, J. Dwivedi-Yu, R. Dessi, R. Raileanu, M. Lomeli, L. Zettlemoyer, N. Cancedda, and T. Scialom, "Toolformer: Language models can teach themselves to use tools," _arXiv preprint arXiv:2302.04761_, 2023.* [79] Z. Gou, Z. Shao, Y. Gong, Y. Shen, Y. Yang, N. Duan, and W. Chen, "Critic: Large language models can self-correct with tool-interactive critiquing," _arXiv preprint arXiv:2305.11738_, 2023.* [80] Y. Liang, C. Wu, T. Song, W. Wu, Y. Xia, Y. Liu, Y. Ou, S. Lu, L. Ji, S. Mao _et al._, "Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis," _arXiv preprint arXiv:2303.16434_, 2023.* [81] S. Hao, T. Liu, Z. Wang, and Z. Hu, "Toolkengpt: Augmenting frozen language models with massive tools via tool embeddings," _arXiv preprint arXiv:2305.11554_, 2023.* [82] B. Paranjape, S. Lundberg, S. Singh, H. Hajishirzi, L. Zettlemoyer, and M. T. Ribeiro, "Art: Automatic multi-step reasoning and tool-use for large language models," _arXiv preprint arXiv:2303.09014_, 2023.* [83] G. Kim, P. Baldi, and S. McAleer, "Language models can solve computer tasks," _arXiv preprint arXiv:2303.17491_, 2023.* [84] T. Cai, X. Wang, T. Ma, X. Chen, and D. Zhou, "Large language models as tool makers," _arXiv preprint arXiv:2305.17126_, 2023.* [85] R. H. Lewis and J. Jiao, "Computegpt: A computational chat model for numerical problems," _arXiv preprint arXiv:2305.06223_, 2023.
+
+summary: 这段文字主要介绍了近期关于使用大型语言模型(LLM)解决数学问题、多模态推理和视觉任务的研究。这些研究涉及到不同的方法，如通过编程执行视觉推理、与专家互动以解决问题等。此外，还有一些研究探讨了如何将计算机任务与LLM相结合，以及如何利用工具增强LLM的功能。总之，这些研究表明，大型语言模型在处理各种复杂任务方面具有巨大潜力。
+* [86] L. Gao, A. Madaan, S. Zhou, U. Alon, P. Liu, Y. Yang, J. Callan, and G. Neubig, "Pal: Program-aided language models," in _International Conference on Machine Learning_. PMLR, 2023, pp. 10 764-10 799.* [87] G. Wang, Y. Xie, Y. Jiang, A. Mandlekar, C. Xiao, Y. Zhu, L. Fan, and A. Anandkumar, "Voyager: An open-ended embodied agent with large language models," _arXiv preprint arXiv:2305.16291_, 2023.* [88] C. Qian, C. Han, Y. R. Fung, Y. Qin, Z. Liu, and H. Ji, "Creator: Disentangling abstract and concrete reasonings of large language models through tool creation," _arXiv preprint arXiv:2305.14318_, 2023.* [89] Y. Cai, S. Mao, W. Wu, Z. Wang, Y. Liang, T. Ge, C. Wu, W. You, T. Song, Y. Xia _et al._, "Low-code llm: Visual programming over llms," _arXiv preprint arXiv:2304.08103_, 2023.* [90] S. Arora, B. Yang, S. Eyuboglu, A. Narayan, A. Hojel, I. Trummer, and C. Re, "Language models enable simple systems for generating structured views of heterogeneous data lakes," _arXiv preprint arXiv:2304.09433_, 2023.* [91] W. Zhang, Y. Shen, W. Lu, and Y. Zhuang, "Data-copilot: Bridging billions of data and humans with autonomous workflow," _arXiv preprint arXiv:2306.07209_, 2023.
+
+translate: [86] L. Gao, A. Madaan, S. Zhou, U. Alon, P. Liu, Y. Yang, J. Callan, and G. Neubig, "Pal: Program-aided language models", in _International Conference on Machine Learning_. PMLR, 2023, pp. 10 764-10 799.* [87] G. Wang, Y. Xie, Y. Jiang, A. Mandlekar, C. Xiao, Y. Zhu, L. Fan, and A. Anandkumar, "Voyager: An open-ended embodied agent with large language models," _arXiv pre-print arXiviviv:2305.16291_, [88] C. Qian, C. Han, Y. R. Fung, Y. Qin, Y. Liu, H. H., H. H., "Creator: Disentangling concrete and abstract reasonings of large language models through creation _Xiv_Xiv_Xiv_Xiv_Xiv_Xiv_Xiv_Xiv_Xiv_Xiv_Xiv, Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y. Y.
+
+summary: 这段话介绍了九个与大型语言模型(LLM)相关的研究项目。这些项目涉及到使用程序辅助的语言模型、开放式环境中的实体代理、通过创建工具来解耦抽象和具体推理的大型语言模型、低代码LLM、用于生成异构数据湖结构化视图的方法、将数十亿数据与人类连接起来的自主工作流程以及结合大数据和人类智能的技术。
+[MISSING_PAGE_FAIL:23]
+
+translate: [缺失页面文件:23]
+
+summary: 抱歉，由于技术限制，无法提供您所请求的页面内容。请尝试再次访问或使用其他相关链接。如有任何疑问，请随时联系我们。谢谢！
+of two tables in the SQL database in Table 20, and 21 and list several examples in Table 22. For verifying the planning ability of the LLM-based AI agents, we select this type of query.
+
+translate: 在表20和表21中列出两个表格,并在表22中列出几个例子. 为了验证基于LLM的AI代理的规划能力,我们选择这种类型的查询.
+
+summary: 在SQL数据库的表20、21中列举了几个示例，并在表22中验证基于LLM的AI代理的规划能力。我们选择了这种类型的查询来进行验证。
+\begin{table}\begin{tabular}{l l} \hline \hline \multicolumn{2}{c}{**Journal**} \\ \hline**Column Name** & **Type** \\ \hline Name & TEXT \\ First\_Issue\_Date & TIME \\ Journal\_ID & INTEGER \\ Category & TEXT \\ Sponsor\_Organization & TEXT \\ Country & TEXT \\ s Language & TEXT \\ Publication\_Count & INTEGER \\ \hline \hline \end{tabular}\begin{tabular}{l l} \hline \multicolumn{2}{c}{**RecordCompanies**} \\ \hline**Column Name** & **Type** \\ \hline Person\_ID & INTEGER \\ Journal\_ID & INTEGER \\ Count & INTEGER \\ \hline \hline \end{tabular}\end{table}Table 21: Schema of the CoverPersonality table
+
+translate: \begin{table}\begin{tabular}{l l} \hline \hline \multicolumn{2}{c}{**Journal**} \\ \hline**Column Name** & **Type** \\ \hline Name & TEXT \\ First\_Issue\_Date & TIME \\ Journal\_ID & INTEGER \\ Category & TEXT \\ Sponsor\_Organization & TEXT \\ Country & TEXT \\ s Language & TEXT \\ Publication\_Count & INTEGER \\ \ \hline \end{tabular}\\begin{tabular}{{l} \l} \hline \multicolumn{2}{c} \\C} \\C Companies \\Companies \\C**** \\Thline \\Thline **** & ** ** \\Thline \\Thline &Type \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\Thline \\
+
+summary: 这段话描述了两个表格的结构，分别是“Journal”和“RecordCompanies”。在“Journal”表格中，列出了一些关于期刊的信息，如名称、发行日期、期刊ID、类别、赞助组织、国家、语言等。而在“RecordCompanies”表格中，则记录了一些公司或个人的信息，包括他们的ID、与期刊的关系以及他们参与的文章数量。
+\begin{table}\begin{tabular}{l l l l} \hline \hline \multicolumn{2}{c}{**Number**} & \multicolumn{1}{c}{**UserPersonality**} \\ \hline**Column Name** & **Type** \\ \hline**Column Name** & **Type** \\ \hline Person\_ID & INTEGER \\ Journal\_ID & INTEGER \\ Count & INTEGER \\ \hline \hline \end{tabular}\end{table}Table 20: Schema of the Journal table
+
+translate: <unk>线<unk>线<unk>线<unk>线<unk>多列{2}{c}{**Number**}和<unk>多列{1}{c}{**UserPersonality**}<unk>线<unk>列名称** & **Type** \\<unk>线<unk>列名称** & **Type** \\<unk>线人<unk>ID & INTEGER \\ Journal<unk>ID & INTEGER \\ Count & INTEGER \\<unk>线<unk>线<unk>线<unk>end{tabular}\end{table}表20:杂志表的图案
+
+summary: Table 20展示了Journal表的结构。这个表格包含两个列，分别是Person\_ID和Journal\_ID，它们的数据类型都是整数。还有一个名为Count的列，它的数据类型也是整数。
+
